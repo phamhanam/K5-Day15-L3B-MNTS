@@ -48,20 +48,19 @@ Data BTC cấp đã dùng: Không có (Track B tự tìm bằng chứng từ rev
 - **Sơ đồ:**
 ```mermaid
 flowchart TD
-    U[Người dùng nhập danh sách thuốc / câu hỏi] --> RF[1. check_red_flags]
-    RF -->|Có dấu hiệu nguy hiểm / quá liều cấp cứu| EM[2a. advise_see_doctor: Dừng luồng, gọi 115 / đi cấp cứu ngay]
-    RF -->|Không phát hiện dấu hiệu cấp cứu| LD[2b. lookup_drug trên data đã kiểm nguồn]
-    LD -->|Có thuốc ngoài data / nhạy cảm / hỏi liều| HO[handoff_to_pharmacist: Tạo bản nháp chờ dược sĩ]
-    LD -->|Tìm thấy hoạt chất trong data| CI[3. check_interactions theo cặp]
-    CI -->|Nhãn high_risk_refer_pharmacist / Nặng / Vừa| HO
-    CI -->|Không có high_risk_refer_pharmacist| CHK{Có chỉ dẫn liều/giờ đã xác minh?}
-    CHK -->|Có (từ đơn/nhãn hoặc seed)| BS[4. build_schedule: Xếp lịch đúng chỉ dẫn + lưu ý cách giờ]
-    CHK -->|Thiếu chỉ dẫn xác minh| ASK[Hỏi lại chỉ dẫn trên đơn hoặc tạo bản nháp handoff_to_pharmacist]
-    CI --> LLM[5. call_model: Tổng hợp giải thích tiếng Việt dễ hiểu + cảnh báo an toàn]
-    BS --> LLM
+    U["Người dùng nhập danh sách thuốc / câu hỏi"] --> RF["1. check_red_flags"]
+    RF -->|"Có dấu hiệu nguy hiểm hoặc quá liều"| EM["2a. advise_see_doctor: Dừng luồng, gọi 115 / đi cấp cứu"]
+    RF -->|"Không phát hiện dấu hiệu cấp cứu"| LD["2b. lookup_drug trên data đã kiểm nguồn"]
+    LD -->|"Ngoài data, ca nhạy cảm hoặc hỏi liều"| HO["handoff_to_pharmacist: Tạo bản nháp chờ dược sĩ"]
+    LD -->|"Tìm thấy hoạt chất trong data"| CI["3. check_interactions theo cặp"]
+    CI -->|"Nhãn high_risk_refer_pharmacist / Nặng / Vừa"| HO
+    CI -->|"Không có high_risk_refer_pharmacist"| CHK{"Có chỉ dẫn liều và giờ đã xác minh?"}
+    CHK -->|"Có từ đơn, nhãn hoặc seed"| BS["4. build_schedule: Xếp lịch đúng chỉ dẫn và cách giờ"]
+    CHK -->|"Thiếu chỉ dẫn xác minh"| ASK["Hỏi lại chỉ dẫn trên đơn hoặc chuyển dược sĩ"]
+    BS --> LLM["5. call_model: Tổng hợp giải thích tiếng Việt và cảnh báo"]
     ASK --> LLM
     HO --> LLM
-    LLM --> OUT[Output: Lịch uống + Cảnh báo theo mức + Nút nháp Hỏi dược sĩ]
+    LLM --> OUT["Output: Lịch uống, cảnh báo theo mức và nút nháp Hỏi dược sĩ"]
 ```
 - **Hình dạng:** `[x] workflow cố định` · `[ ] một agent` · `[ ] nhiều agent`
   - **Lý do:** Quy trình an toàn y khoa bắt buộc `check_red_flags` chạy đầu tiên và mọi tra cứu thuốc/tương tác phải đi qua hàm dữ liệu xác minh trước khi LLM diễn giải. Không chọn một/nhiều agent tự do vì nếu LLM tự quyết định thứ tự gọi tool, hệ thống có nguy cơ bỏ sót bước kiểm tra dấu hiệu nguy hiểm hoặc bịa tương tác thuốc.

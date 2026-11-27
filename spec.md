@@ -3,7 +3,7 @@
 > Mốc nộp: §7 chốt chuẩn "đạt" tại **CP2 19:30 Thứ Sáu 27/11** · §0–§7 nộp **CP3 10:00 Thứ Bảy 28/11** · đủ §0–§10 **CP4 14:30 Thứ Bảy 28/11** · §10 changelog ghi tiếp đến **23:59 Thứ Bảy 28/11**.
 
 Track: [ ] A · [x] B · [ ] C · [ ] D · [ ] E — bài toán: **B2 · Kiểm tra tương tác thuốc và lịch uống**
-Data BTC cấp đã dùng: Không có (Track B tự tìm bằng chứng từ review/phỏng vấn và tự dựng dữ liệu y khoa có nguồn công khai trong `data/DATA_CARD.md`).
+Data BTC cấp đã dùng: Không có (Track B tự tìm bằng chứng từ review/phỏng vấn/khảo sát và tự dựng dữ liệu y khoa có nguồn công khai trong `data/DATA_CARD.md`).
 
 ## §0. Hiện tại việc này diễn ra thế nào *(guide 1.1)*
 - Luồng hiện tại trong thực tế (4 bước):
@@ -18,7 +18,7 @@ Data BTC cấp đã dùng: Không có (Track B tự tìm bằng chứng từ rev
 - Việc họ cố làm xong: `Rà soát nhanh danh sách thuốc cha mẹ đang dùng và sắp xếp lịch uống trong ngày mà không bỏ sót cặp thuốc kỵ nhau hay giờ uống cách nhau`.
 - Hôm nay họ giải bằng gì, hỏng ở đâu, vì sao chưa bỏ: Giải bằng hỏi nhanh người bán thuốc/chat nhà thuốc hoặc tự đọc tờ HDSD + Google. Hỏng ở chỗ hỏi vội dễ sót thuốc đang uống kèm, ngại đọc giấy HDSD dài, chat tối muộn phải chờ lâu; chưa bỏ vì vẫn cần có người xác nhận an toàn trước khi cho cha mẹ uống.
 - Pain (KHÔNG chữ AI): Người con sắp thuốc cho cha mẹ cao tuổi — gom nhiều loại thuốc từ nhiều đơn và thuốc tự mua ngoài — không có công cụ rà soát cặp tương tác và quy tắc uống cách giờ — dễ xếp nhầm thuốc kỵ nhau hoặc uống sai giờ gây hại sức khỏe khó đảo lại.
-- Bằng chứng — số chính + kết luận (chi tiết: `evidence/summary.md`): *(Đang hoàn thiện cho CP3)* Đã chốt giả thuyết trước khi khảo sát tại `evidence/hypothesis.md` (ngưỡng kiểm chứng `>= 2/3` người sắp thuốc hộ từng bỏ sót tương tác/giờ cách nhau). Kế hoạch tối T6–sáng T7: phỏng vấn ≥3 người thân hay sắp thuốc hộ và đào review app nhà thuốc trên Google Play/App Store.
+- Bằng chứng — số chính + kết luận (chi tiết: `evidence/summary.md`): *(Đang hoàn thiện cho CP3)* Đã chốt giả thuyết trước khi khảo sát tại `evidence/hypothesis.md` (ngưỡng kiểm chứng `>= 2/3` người sắp thuốc hộ từng bỏ sót tương tác/giờ cách nhau). Kế hoạch tối T6–sáng T7: khảo sát và đào review app nhà thuốc trên Google Play/App Store.
 
 ## §2. Impact & quyết định chọn *(guide 1.3)*
 
@@ -28,7 +28,7 @@ Data BTC cấp đã dùng: Không có (Track B tự tìm bằng chứng từ rev
 | **B2 · Kiểm tra tương tác thuốc & lịch uống** | **Cao (người có cha mẹ cao tuổi / uống nhiều thuốc)** *(tự ước tính)* | **4–8 lần/tháng (mỗi tuần sắp thuốc / mua thêm thuốc)** *(tự ước tính)* | **15–20p tra cứu + rủi ro hại sức khỏe nếu nhầm tương tác nặng** | **Cao (lặp lại hằng tuần + mức độ rủi ro sức khỏe lớn)** *(tự ước tính)* | **Kịp (đo được trên bộ thuốc seed chuẩn nguồn)** | **Chọn** |
 | B3 · Tư vấn nhà thuốc qua chat | Rộng (khách chat nhà thuốc) *(tự ước tính)* | 1–2 lần/tháng *(tự ước tính)* | 10–30p chờ dược sĩ trả lời lúc tối muộn | Trung bình–Cao *(tự ước tính)* | Kịp nhưng phạm vi sản phẩm quá rộng | Loại |
 
-- **Impact / tháng** của hướng chọn (B2) = `1 người sắp thuốc hộ` × `4 lần/tháng (mỗi tuần 1 lần)` × `15 phút tra cứu/đối chiếu` = `60 phút/tháng/người` *(tự ước tính ở CP2, sẽ cập nhật số từ phỏng vấn ở `evidence/summary.md` tại CP3)* — chưa tính chi phí y tế nếu xảy ra tương tác thuốc nặng.
+- **Impact / tháng** của hướng chọn (B2) = `1 người sắp thuốc hộ` × `4 lần/tháng (mỗi tuần 1 lần)` × `15 phút tra cứu/đối chiếu` = `60 phút/tháng/người` *(tự ước tính ở CP2, sẽ cập nhật số từ phỏng vấn/khảo sát ở `evidence/summary.md` tại CP3)* — chưa tính chi phí y tế nếu xảy ra tương tác thuốc nặng.
 - Hướng ĐÃ LOẠI + vì sao:
   - Loại **B1**: Tần suất dùng thấp hơn theo tháng, dữ liệu triệu chứng đa chuyên khoa khó kiểm chứng chuẩn xác trong 2 ngày.
   - Loại **B3**: Danh mục sản phẩm/thuốc không kê đơn quá rộng, dễ bị kéo vào tư vấn bán hàng thay vì giải quyết một quyết định rõ ràng.

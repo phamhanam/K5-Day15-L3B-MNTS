@@ -1,11 +1,15 @@
-# Giả thuyết — viết TRƯỚC khi tìm bằng chứng (5 phút, commit ngay)
+# Giả thuyết — viết trước khi thu thập bằng chứng
 
-> Điền ở guide bước 1.1. Ôn lại: ngày 2 · lab ngày 2.
-> Viết **trước** khi đọc dòng data đầu tiên hay hỏi người đầu tiên, để không sửa cho khớp kết quả. Kết quả ngược giả thuyết vẫn đủ điểm nếu số là thật.
+> Bản ghi giả thuyết ban đầu cho CP1. Chưa phải kết luận hay bằng chứng pain; không sửa lại để khớp dữ liệu thu được.
 
-- Ngày giờ viết: __
-- Người dùng chính (một vai cụ thể): __
-- **Mình nghĩ:** [ai] gặp khó khi [việc] vì [lý do], hậu quả là [mất gì].
-- **Có thể còn cách giải thích khác:** __
-- **Mình đúng nếu thấy:** [một con số nhóm tự chọn] — vd "≥2/3 người kể được một lần như thế trong 1 tháng qua" hoặc "≥x/N học viên bỏ ở bước này" *(ví dụ)*
-- **Nguồn sẽ dùng** (≥1 nguồn đạt ngưỡng, guide 1.2): [ ] đào data · [ ] phỏng vấn ≥3 · [ ] khảo sát ≥20 — nguồn chính: __ · nguồn để kiểm lại: __
+- Ngày viết: 27/11/2026
+- Người dùng chính: người thân đang sắp và nhắc thuốc hộ cha mẹ dùng nhiều thuốc.
+- **Mình nghĩ:** Người thân này có thể gặp khó khi kiểm tra thuốc và sắp lịch uống cho cha mẹ vì phải đối chiếu nhiều tên thuốc, hướng dẫn và thời điểm dùng; nếu nhầm hoặc không chắc, họ có thể mất thời gian hỏi lại hoặc lo bỏ sót nguy cơ khi phối hợp thuốc.
+- **Có thể còn cách giải thích khác:** Họ có thể đã có lịch do bác sĩ/dược sĩ lập, dùng hộp chia thuốc hoặc được người khác hỗ trợ; khó khăn có thể chủ yếu đến từ việc nhớ lịch chứ không phải tra cứu tương tác.
+- **Mình đúng nếu thấy:** ít nhất 2/3 người được hỏi (n=3) kể được một tình huống trong tháng gần nhất phải kiểm tra lại cách sắp/nhắc thuốc hoặc nhờ người khác xác nhận vì không chắc. Đây là ngưỡng kiểm chứng do nhóm chọn, không phải kết quả khảo sát.
+- **Nguồn sẽ dùng:** phỏng vấn tối thiểu 3 người thuộc vai người chăm sóc/người sắp thuốc; đối chiếu bằng đào dữ liệu công khai về hướng dẫn sử dụng thuốc và tài liệu hỗ trợ dùng thuốc. Chỉ ghi số liệu, lời kể sau khi thực sự thu thập; ẩn danh người tham gia.
+
+## Giả thuyết phụ
+
+- Người hỏi thuốc tại nhà thuốc vào buổi tối muộn có thể khó nhận được hỗ trợ phù hợp nếu câu hỏi vượt quá thông tin có thể xác minh tại chỗ; họ có thể cần được hướng dẫn hỏi dược sĩ/bác sĩ vào thời điểm phù hợp.
+- Có thể còn cách giải thích khác: nhà thuốc vẫn có dược sĩ trực hoặc câu hỏi thường chỉ cần xem lại nhãn/tờ hướng dẫn. Cần kiểm tra bằng phỏng vấn, không xem đây là sự thật trước khi có bằng chứng.

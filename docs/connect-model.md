@@ -17,8 +17,17 @@ API_KEY=<key của nhóm, không dấu ngoặc kép>
 ```
 
 - `MODEL_NAME` là **mã gọi API** của model, lấy ở trang tài liệu của nhà cung cấp.
-- Chưa điền `MODEL_PROVIDER` thì `ai.py` chạy **chế độ giả** (câu giả, token 0). Dùng được cho bản khung trước CP2, nhưng `run.py eval` và `run.py simulate` không tính lượt đó.
+- Để chạy Mock Flow offline, đặt `MODEL_PROVIDER=fake` (mẫu `.env.example` đã đặt sẵn). Chế độ này không cần `MODEL_NAME`, `API_KEY` hoặc Internet; trả nguyên văn phần tổng hợp workflow agent đưa vào, không tự thêm dữ kiện y tế. Token vào/ra là `0`; lượt này không được tính trong `eval`/`simulate`.
 - `.env` đã có trong `.gitignore`. **Không commit key.**
+
+Trên Windows, chép cấu hình mẫu khi chưa có `.env`, rồi chạy ứng dụng:
+
+```powershell
+Copy-Item .env.example .env   # chỉ chạy nếu chưa có .env để giữ cấu hình/key local hiện có
+python run.py
+```
+
+Nếu đã có `.env`, chỉ kiểm tra/đặt dòng `MODEL_PROVIDER=fake`; không cần điền key cho chế độ này.
 
 ## 2. Chép code vào `codebase/ai.py`
 

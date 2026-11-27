@@ -1,7 +1,8 @@
 # Giả thuyết — viết trước khi thu thập bằng chứng
 
-> Giả thuyết
+>Bản ghi giả thuyết ban đầu cho CP1. Chưa phải kết luận hay bằng chứng pain; không sửa lại để khớp dữ liệu thu được.
 
+- Ngày viết: 27/11/2026
 - Người dùng chính: người thân đang sắp và nhắc thuốc hộ cha mẹ dùng nhiều thuốc.
 - **Ý kiến:** Người thân này có thể gặp khó khi kiểm tra thuốc và sắp lịch uống cho cha mẹ vì phải đối chiếu nhiều tên thuốc, hướng dẫn và thời điểm dùng; nếu nhầm hoặc không chắc, họ có thể mất thời gian hỏi lại hoặc lo bỏ sót nguy cơ khi sử dụng nhiều loại thuốc cùng nhau.
 - **Có thể còn cách giải thích khác:** Họ có thể đã có lịch do bác sĩ/dược sĩ lập, dùng hộp chia thuốc hoặc được người khác hỗ trợ; khó khăn có thể chủ yếu đến từ việc nhớ lịch chứ không phải tra cứu tương tác.

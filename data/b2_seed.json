@@ -119,7 +119,7 @@
     {
       "id": "INT-LEVOTHYROXINE-CALCIUM-001",
       "record_type": "interaction",
-      "ingredients": ["levothyroxine sodium", "calcium carbonate"],
+      "ingredients": ["levothyroxine", "calcium carbonate"],
       "clinical_severity": null,
       "eval_bucket": "moderate_timing_separation",
       "summary": "Calcium carbonate có thể làm giảm hấp thu levothyroxine. Nhãn DailyMed khuyên tách ít nhất 4 giờ. Nhãn moderate chỉ là nhóm kiểm thử workflow của nhóm, không phải phân loại mức độ lâm sàng áp dụng cho mọi người.",
@@ -130,7 +130,7 @@
     {
       "id": "INT-LEVOTHYROXINE-IRON-001",
       "record_type": "interaction",
-      "ingredients": ["levothyroxine sodium", "ferrous sulfate"],
+      "ingredients": ["levothyroxine", "ferrous sulfate"],
       "clinical_severity": null,
       "eval_bucket": "moderate_timing_separation",
       "summary": "Ferrous sulfate có thể làm giảm hấp thu levothyroxine. Nhãn DailyMed khuyên tách ít nhất 4 giờ. Nhãn moderate chỉ là nhóm kiểm thử workflow của nhóm, không phải phân loại mức độ lâm sàng áp dụng cho mọi người.",
@@ -194,7 +194,7 @@
   ],
   "unfilled_categories": {
     "mild_or_moderate_interaction_pairs": "Chưa có cặp được xác minh nguồn; không được điền bằng phỏng đoán.",
-    "spacing_rules": "Chưa có quy tắc cụ thể; yêu cầu xem đơn/tờ hướng dẫn và hỏi dược sĩ.",
-    "common_medicine_catalog": "Chưa đủ dữ liệu đã kiểm tra nhãn sản phẩm; chưa dùng để tra liều/cách uống."
+    "spacing_rules": "Đã có 5 schedule_rules có nguồn, gồm tách levothyroxine khỏi calcium carbonate/ferrous sulfate ít nhất 4 giờ và các gợi ý thời điểm theo dạng thuốc. Chưa đủ để tạo lịch cá nhân; cần đơn và xác nhận đúng dạng sản phẩm.",
+    "common_medicine_catalog": "Đã bổ sung 6 thuốc phổ biến với aliases và nguồn công khai. Danh mục vẫn là seed giới hạn, không đầy đủ mọi biệt dược/hàm lượng; không dùng để suy liều hoặc khẳng định an toàn."
   }
 }

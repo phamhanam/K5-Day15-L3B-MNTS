@@ -1,5 +1,6 @@
 """Offline tests for fake mode and the existing OpenRouter adapter."""
 import json
+import io
 import os
 import subprocess
 import sys
@@ -100,6 +101,88 @@ class OpenRouterCompatibilityTests(unittest.TestCase):
             "tokens_out": 3,
         })
         urlopen.assert_called_once()
+
+    def test_openrouter_missing_key_fails_before_network(self):
+        with patch.object(ai, "MODEL_PROVIDER", "openrouter"), \
+                patch.object(ai, "MODEL_NAME", "openrouter/free"), \
+                patch.object(ai, "API_KEY", ""), \
+                patch.object(ai.urllib.request, "urlopen") as urlopen:
+            with self.assertRaisesRegex(RuntimeError, "chưa gửi request nào"):
+                ai.call_model("system", "user")
+        urlopen.assert_not_called()
+
+    def test_http_error_does_not_echo_response_body_or_key(self):
+        response_body = b"upstream reflected SECRET_SENTINEL"
+        http_error = ai.urllib.error.HTTPError(
+            ai.OPENROUTER_URL, 401, "Unauthorized", hdrs=None, fp=io.BytesIO(response_body)
+        )
+        with patch.object(ai, "MODEL_PROVIDER", "openrouter"), \
+                patch.object(ai, "MODEL_NAME", "openrouter/free"), \
+                patch.object(ai, "API_KEY", "LOCAL_KEY_SENTINEL"), \
+                patch.object(ai.urllib.request, "urlopen", side_effect=http_error):
+            with self.assertRaises(RuntimeError) as raised:
+                ai.call_model("system", "user")
+        self.assertIn("HTTP 401", str(raised.exception))
+        self.assertNotIn("SECRET_SENTINEL", str(raised.exception))
+        self.assertNotIn("LOCAL_KEY_SENTINEL", str(raised.exception))
+
+    def test_network_error_is_reported_without_details(self):
+        with patch.object(ai, "MODEL_PROVIDER", "openrouter"), \
+                patch.object(ai, "MODEL_NAME", "openrouter/free"), \
+                patch.object(ai, "API_KEY", "unit-test-placeholder"), \
+                patch.object(ai.urllib.request, "urlopen", side_effect=ai.urllib.error.URLError("private detail")):
+            with self.assertRaisesRegex(RuntimeError, "Không kết nối được OpenRouter"):
+                ai.call_model("system", "user")
+
+    def test_invalid_json_and_missing_usage_fail_closed(self):
+        class Response:
+            def __init__(self, body):
+                self.body = body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                return self.body
+
+        base = {"model": "provider/model:free", "choices": [{"message": {"content": "ok"}}]}
+        cases = [
+            (Response(b"not-json"), "không phải JSON"),
+            (Response(json.dumps(base).encode("utf-8")), "thiếu text hoặc usage"),
+        ]
+        for response, message in cases:
+            with self.subTest(message=message), \
+                    patch.object(ai, "MODEL_PROVIDER", "openrouter"), \
+                    patch.object(ai, "MODEL_NAME", "openrouter/free"), \
+                    patch.object(ai, "API_KEY", "unit-test-placeholder"), \
+                    patch.object(ai.urllib.request, "urlopen", return_value=response):
+                with self.assertRaisesRegex(RuntimeError, message):
+                    ai.call_model("system", "user")
+
+    def test_invalid_token_usage_is_rejected(self):
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                return json.dumps({
+                    "model": "provider/model:free",
+                    "choices": [{"message": {"content": "ok"}}],
+                    "usage": {"prompt_tokens": -1, "completion_tokens": 2},
+                }).encode("utf-8")
+
+        with patch.object(ai, "MODEL_PROVIDER", "openrouter"), \
+                patch.object(ai, "MODEL_NAME", "openrouter/free"), \
+                patch.object(ai, "API_KEY", "unit-test-placeholder"), \
+                patch.object(ai.urllib.request, "urlopen", return_value=Response()):
+            with self.assertRaisesRegex(RuntimeError, "prompt_tokens không hợp lệ"):
+                ai.call_model("system", "user")
 
 
 if __name__ == "__main__":

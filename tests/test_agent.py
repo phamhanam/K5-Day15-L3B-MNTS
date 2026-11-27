@@ -74,6 +74,13 @@ class AgentWorkflowTests(unittest.TestCase):
         schedule.assert_not_called()
         self.assertIn("Cảnh báo seed", result["output"])
 
+    def test_unclassified_seed_interaction_hands_off_with_source(self):
+        with patch.object(agent.tools, "check_red_flags", return_value={"urgency": "unknown", "message": ""}):
+            result = agent.answer("Levothyroxine và calcium carbonate có tương tác không?")
+        self.assertIn("chưa phân loại", result["output"])
+        self.assertIn("Cần dược sĩ rà soát", result["output"])
+        self.assertIn("dailymed.nlm.nih.gov", result["output"])
+
     def test_unlisted_interaction_is_not_declared_safe(self):
         interaction = {"status": "no_verified_interaction_in_seed", "results": [{
             "pair": ["warfarin", "ibuprofen"],

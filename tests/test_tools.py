@@ -69,6 +69,14 @@ class SeedLookupTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["risk_tag"], "high_risk_refer_pharmacist")
         self.assertTrue(result["results"][0]["sources"])
 
+    def test_unclassified_seed_interaction_is_retained_not_treated_as_missing_file(self):
+        result = tools.check_interactions(["levothyroxine", "calcium carbonate"])
+        self.assertEqual(result["status"], "partial_data")
+        pair = next(item for item in result["results"] if item["status"] == "interaction_unclassified")
+        self.assertIsNone(pair["risk_tag"])
+        self.assertTrue(pair["summary"])
+        self.assertTrue(pair["sources"])
+
     def test_unknown_drug_prevents_interaction_safety_conclusion(self):
         result = tools.check_interactions(["warfarin", "ibuprofen", "unknown medicine"])
         self.assertEqual(result["status"], "partial_data")

@@ -70,23 +70,41 @@ def call_openrouter(system: str, user: str) -> dict:
         with urllib.request.urlopen(request, timeout=60) as response:
             data = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
-        detail = error.read().decode("utf-8", "replace")[:300]
-        raise RuntimeError("OpenRouter HTTP %d: %s" % (error.code, detail)) from error
+        # Do not echo the upstream body; it may reflect submitted request data.
+        error.close()
+        raise RuntimeError("OpenRouter request failed with HTTP %d." % error.code) from None
+    except urllib.error.URLError:
+        raise RuntimeError("Không kết nối được OpenRouter; kiểm tra mạng rồi thử lại.") from None
+    except (TimeoutError, OSError):
+        raise RuntimeError("Kết nối OpenRouter bị gián đoạn hoặc hết thời gian chờ.") from None
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise RuntimeError("OpenRouter trả về nội dung không phải JSON UTF-8 hợp lệ.") from None
+
+    if not isinstance(data, dict):
+        raise RuntimeError("OpenRouter trả về cấu trúc response không hợp lệ.")
 
     try:
         usage = data["usage"]
         text = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        raise RuntimeError("Phản hồi OpenRouter thiếu text hoặc usage token cần thiết.") from None
+    if not isinstance(usage, dict):
+        raise RuntimeError("OpenRouter trả usage không hợp lệ.")
+    try:
         tokens_in = usage["prompt_tokens"]
         tokens_out = usage["completion_tokens"]
-    except (KeyError, IndexError, TypeError) as error:
-        raise RuntimeError("Phản hồi OpenRouter thiếu text hoặc usage token cần thiết.") from error
+    except KeyError:
+        raise RuntimeError("OpenRouter response thiếu prompt_tokens hoặc completion_tokens.") from None
     if not isinstance(text, str):
         raise RuntimeError("OpenRouter trả nội dung không phải chuỗi.")
     if not isinstance(tokens_in, int) or isinstance(tokens_in, bool) or tokens_in < 0:
         raise RuntimeError("OpenRouter trả prompt_tokens không hợp lệ.")
     if not isinstance(tokens_out, int) or isinstance(tokens_out, bool) or tokens_out < 0:
         raise RuntimeError("OpenRouter trả completion_tokens không hợp lệ.")
-    return {"text": text, "model": data.get("model") or MODEL_NAME,
+    response_model = data.get("model") or MODEL_NAME
+    if not isinstance(response_model, str) or not response_model.strip():
+        raise RuntimeError("OpenRouter không trả tên model hợp lệ.")
+    return {"text": text, "model": response_model,
             "tokens_in": tokens_in, "tokens_out": tokens_out}
 
 

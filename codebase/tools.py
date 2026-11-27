@@ -35,9 +35,10 @@ def _load_seed():
     for record in records:
         if record.get("record_type") == "interaction":
             ingredients = record.get("ingredients")
+            risk_tag = record.get("risk_tag")
             if (not isinstance(ingredients, list) or len(ingredients) < 2
                     or any(not isinstance(item, str) or not item.strip() for item in ingredients)
-                    or not isinstance(record.get("risk_tag"), str) or not record["risk_tag"].strip()
+                    or (risk_tag is not None and (not isinstance(risk_tag, str) or not risk_tag.strip()))
                     or not isinstance(record.get("summary"), str) or not record["summary"].strip()
                     or not _valid_sources(record.get("source_urls"))):
                 return None, {
@@ -58,6 +59,15 @@ def _drug_record_is_valid(record):
         isinstance(record.get("name"), str) and bool(record["name"].strip())
         and isinstance(record.get("active_ingredient"), str) and bool(record["active_ingredient"].strip())
         and isinstance(record.get("summary"), str) and bool(record["summary"].strip())
+        and _valid_sources(record.get("source_urls"))
+    )
+
+
+def _drug_identity_is_valid(record):
+    """Validate only identity/source fields needed to match an interaction pair."""
+    return (
+        isinstance(record.get("name"), str) and bool(record["name"].strip())
+        and isinstance(record.get("active_ingredient"), str) and bool(record["active_ingredient"].strip())
         and _valid_sources(record.get("source_urls"))
     )
 
@@ -199,7 +209,7 @@ def check_interactions(drug_names: list) -> dict:
                 "sources": [],
             })
             continue
-        if not _drug_record_is_valid(first_record) or not _drug_record_is_valid(second_record):
+        if not _drug_identity_is_valid(first_record) or not _drug_identity_is_valid(second_record):
             results.append({
                 "pair": pair_names,
                 "status": "data_unavailable",
@@ -213,15 +223,17 @@ def check_interactions(drug_names: list) -> dict:
                    if {_normalize_name(item) for item in record["ingredients"]} == pair]
         if matched:
             for record in matched:
+                risk_tag = record.get("risk_tag")
                 results.append({
                     "pair": pair_names,
                     "interaction_id": record.get("id", ""),
-                    "status": "interaction_found",
+                    "status": "interaction_found" if risk_tag else "interaction_unclassified",
                     "ingredients": record["ingredients"],
-                    "risk_tag": record["risk_tag"],
+                    "risk_tag": risk_tag,
                     "summary": record["summary"],
                     "sources": record["source_urls"],
                     "limits": record.get("limits", ""),
+                    "message": "Tương tác có nguồn nhưng chưa được phân loại mức rủi ro; cần dược sĩ đánh giá." if not risk_tag else "",
                 })
         else:
             results.append({
@@ -231,9 +243,9 @@ def check_interactions(drug_names: list) -> dict:
                 "sources": [],
             })
 
-    missing = any(item["status"] in {"no_verified_data", "data_unavailable", "no_verified_interaction_in_seed"}
+    missing = any(item["status"] in {"no_verified_data", "data_unavailable", "no_verified_interaction_in_seed", "interaction_unclassified"}
                   for item in results)
-    has_interaction = any(item["status"] == "interaction_found" for item in results)
+    has_interaction = any(item["status"] in {"interaction_found", "interaction_unclassified"} for item in results)
     return {
         "status": "partial_data" if missing else ("interaction_found" if has_interaction else "no_verified_interaction_in_seed"),
         "drug_names": names,

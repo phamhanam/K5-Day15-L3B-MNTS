@@ -130,11 +130,13 @@ def _render_interactions(result: dict) -> str:
     for item in result.get("results", []):
         pair = item.get("pair", item.get("ingredients", []))
         pair_label = " + ".join(pair) if pair else "cặp chưa nhận diện đầy đủ"
-        if item.get("status") == "interaction_found" or item.get("risk_tag"):
-            risk = item.get("risk_tag")
+        if item.get("status") in {"interaction_found", "interaction_unclassified"} or item.get("risk_tag"):
+            risk = item.get("risk_tag") or "chưa phân loại"
             lines.append("Cảnh báo tương tác%s — %s: %s" % (
-                (" [%s]" % risk) if risk else "", pair_label, item.get("summary", "")
+                (" [%s]" % risk), pair_label, item.get("summary", "")
             ))
+            if item.get("message"):
+                lines.append(item["message"])
         else:
             lines.append("%s — %s" % (pair_label, item.get("message", "Chưa đủ căn cứ; không kết luận an toàn.")))
         if item.get("sources"):
@@ -184,7 +186,7 @@ def answer(text: str) -> dict:
             high_risk = [item for item in pair_results
                          if item.get("risk_tag") == "high_risk_refer_pharmacist"]
             incomplete = [item for item in pair_results if item.get("status") in {
-                "no_verified_data", "data_unavailable", "no_verified_interaction_in_seed"
+                "no_verified_data", "data_unavailable", "no_verified_interaction_in_seed", "interaction_unclassified"
             }]
             if interaction_result.get("status") in {"no_verified_data", "data_unavailable"} and not pair_results:
                 incomplete.append({"message": interaction_result.get("message", "Chưa đủ căn cứ kiểm tra tương tác."), "pair": []})

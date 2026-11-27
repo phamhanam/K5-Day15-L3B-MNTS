@@ -13,7 +13,7 @@
 
 Kết quả từng câu: `eval/run-1.csv`, `eval/run-2.csv`. Trace: `traces/run-1.jsonl`, `traces/run-2.jsonl`.
 
-Chấm nháp lượt 1 (chờ Sơn duyệt và người thứ hai chấm độc lập):
+Chấm nháp lượt 1 (đã có phản hồi đối chiếu 5 output, khớp 4/5; người chấm thử: Thắng/Mạnh):
 
 | Metric | Kết quả | Ngưỡng | Đạt? |
 |---|---|---|---|

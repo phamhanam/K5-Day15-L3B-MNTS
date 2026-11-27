@@ -1,29 +1,28 @@
-"""Luồng chính của bản chạy thử — NHÓM VIẾT. Điền ở guide bước 3.2.
-
-`python run.py`, `python run.py eval` và `python run.py simulate` đều gọi answer(text).
-
-Hợp đồng:
-    answer(text: str) -> dict có khoá "output" (str): kết quả đưa cho người dùng.
-    Token, tên model, số lần gọi model / công cụ: khung tự đếm qua call_model và @tool — không cần trả.
-    Bộ chạy gửi NGUYÊN ô input của câu thử vào text. Dữ liệu nền (bài học, thông báo, lịch…)
-    do luồng của nhóm tự đọc qua công cụ trong tools.py.
-
-Hình dạng: đúng như sơ đồ ở spec.md §4 (guide bước 2.2) — workflow cố định, một agent, hay nhiều agent.
-Khung dưới đây là một workflow 2 bước VÍ DỤ, chỉ để luồng chạy hết từ trước CP2. Thay bằng luồng của nhóm.
-Nếu viết vòng lặp agent (AI tự chọn bước tiếp): đặt giới hạn MAX_STEPS và ghi lý do dừng bằng note("dừng: …").
-"""
+"""B2 Healthcare workflow; the red-flag gate runs before any model call."""
 from ai import call_model
-from tools import search_example
-from tracing import note  # noqa: F401
+from tools import check_red_flags
 
-SYSTEM = ""     # NHÓM VIẾT: hướng dẫn hệ thống cho model (vai trò, phạm vi, khi nào nói "không có")
-MAX_STEPS = 5   # dùng khi viết vòng lặp agent
+SYSTEM = """Bạn là trợ lý hỗ trợ thông tin thuốc, không phải nhân viên y tế.
+Không chẩn đoán, kê đơn, đề xuất hoặc thay đổi liều, khuyên ngừng thuốc, hay khẳng định phối hợp thuốc an toàn.
+Chỉ nêu dữ kiện đã được cung cấp/đối chiếu; bản thử hiện chưa có dữ liệu thuốc hoặc tương tác đã xác minh.
+Khi thiếu thông tin hoặc căn cứ, nói rõ giới hạn và khuyên hỏi bác sĩ/dược sĩ.
+Nếu người dùng mô tả tình trạng khẩn cấp, hướng dẫn gọi 115/đến cấp cứu ngay.
+Trả lời bằng tiếng Việt, ngắn gọn và không tạo cảm giác đã kiểm tra dữ liệu chưa có."""
 
 
 def answer(text: str) -> dict:
-    # Bước 1 (ví dụ): lấy căn cứ từ dữ liệu / công cụ của bài toán
-    found = search_example(text)
-    context = "\n".join("[%s] %s" % (p["code"], p["text"]) for p in found)
-    # Bước 2 (ví dụ): model quyết định dựa trên căn cứ
-    reply = call_model(SYSTEM, "Căn cứ:\n%s\n\nĐầu vào của người dùng:\n%s" % (context, text))
+    """Return user-facing text as {"output": str}; screen emergency cues first."""
+    if not isinstance(text, str):
+        return {"output": "Vui lòng nhập nội dung bằng văn bản. Nếu đang nguy cấp, gọi 115 hoặc đến cơ sở cấp cứu ngay."}
+
+    red_flag_result = check_red_flags(text)
+    if red_flag_result["urgency"] == "emergency":
+        return {"output": red_flag_result["message"]}
+
+    prompt = (
+        "Kết quả sàng lọc dấu hiệu nguy hiểm: " + red_flag_result["message"] +
+        "\nCăn cứ dữ liệu thuốc/tương tác đã xác minh: hiện không có dữ liệu trong bản thử."
+        "\nĐầu vào của người dùng:\n" + text
+    )
+    reply = call_model(SYSTEM, prompt)
     return {"output": reply["text"]}

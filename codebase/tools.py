@@ -170,60 +170,75 @@ def check_interactions(drug_names: list) -> dict:
     if error:
         return {**error, "drug_names": names, "results": [], "sources": []}
 
-    normalized_names = {_normalize_name(name) for name in names}
+    normalized_to_name = {}
+    for name in names:
+        normalized_to_name.setdefault(_normalize_name(name), name)
+    normalized_names = list(normalized_to_name)
+    if len(normalized_names) < 2:
+        return {"status": "invalid_input", "drug_names": names, "results": [],
+                "message": "Cần ít nhất hai thuốc khác nhau để kiểm tra các cặp."}
     drug_records = [record for record in records if record.get("record_type") == "drug_reference"]
-    known_names = set()
+    drug_by_name = {}
     for record in drug_records:
-        if _drug_record_is_valid(record):
-            known_names.add(_normalize_name(record["name"]))
-            known_names.add(_normalize_name(record["active_ingredient"]))
-    unknown = [name for name in names if _normalize_name(name) not in known_names]
-    if unknown:
-        return {
-            "status": "no_verified_data",
-            "drug_names": names,
-            "unknown_drugs": unknown,
-            "results": [],
-            "sources": [],
-            "message": "Có thuốc chưa được nhận diện trong dữ liệu đã kiểm chứng. Không thể kết luận về các cặp; hãy xác nhận tên/hoạt chất với dược sĩ.",
-        }
-    if any(not _drug_record_is_valid(record) for record in drug_records):
-        return {
-            "status": "data_unavailable",
-            "drug_names": names,
-            "results": [],
-            "sources": [],
-            "message": "Có bản ghi thuốc thiếu thông tin hoặc nguồn hợp lệ; không thể kết luận về tương tác. Hãy hỏi dược sĩ.",
-        }
+        if isinstance(record.get("name"), str):
+            drug_by_name[_normalize_name(record["name"])] = record
+        if isinstance(record.get("active_ingredient"), str):
+            drug_by_name[_normalize_name(record["active_ingredient"])] = record
 
+    interaction_records = [record for record in records if record.get("record_type") == "interaction"]
     results = []
     for first, second in combinations(normalized_names, 2):
+        pair_names = [normalized_to_name[first], normalized_to_name[second]]
+        first_record = drug_by_name.get(first)
+        second_record = drug_by_name.get(second)
+        if first_record is None or second_record is None:
+            results.append({
+                "pair": pair_names,
+                "status": "no_verified_data",
+                "message": "Chưa đủ căn cứ nhận diện cả hai thuốc trong cặp; không thể kết luận có hay không có tương tác.",
+                "sources": [],
+            })
+            continue
+        if not _drug_record_is_valid(first_record) or not _drug_record_is_valid(second_record):
+            results.append({
+                "pair": pair_names,
+                "status": "data_unavailable",
+                "message": "Bản ghi thuốc trong cặp thiếu thông tin hoặc nguồn hợp lệ; chưa đủ căn cứ kiểm tra.",
+                "sources": [],
+            })
+            continue
+
         pair = {first, second}
-        for record in records:
-            if record.get("record_type") != "interaction":
-                continue
-            ingredients = {_normalize_name(item) for item in record["ingredients"]}
-            if pair == ingredients:
+        matched = [record for record in interaction_records
+                   if {_normalize_name(item) for item in record["ingredients"]} == pair]
+        if matched:
+            for record in matched:
                 results.append({
+                    "pair": pair_names,
                     "interaction_id": record.get("id", ""),
+                    "status": "interaction_found",
                     "ingredients": record["ingredients"],
                     "risk_tag": record["risk_tag"],
                     "summary": record["summary"],
                     "sources": record["source_urls"],
                     "limits": record.get("limits", ""),
                 })
-    if results:
-        return {
-            "status": "interaction_found",
-            "drug_names": names,
-            "results": results,
-            "message": "Seed có cảnh báo cho cặp này. Hãy liên hệ dược sĩ/bác sĩ; không tự thay đổi hoặc ngừng thuốc.",
-        }
+        else:
+            results.append({
+                "pair": pair_names,
+                "status": "no_verified_interaction_in_seed",
+                "message": "Seed không có bản ghi cho cặp này; đây không phải xác nhận không có tương tác hoặc thuốc an toàn.",
+                "sources": [],
+            })
+
+    missing = any(item["status"] in {"no_verified_data", "data_unavailable", "no_verified_interaction_in_seed"}
+                  for item in results)
+    has_interaction = any(item["status"] == "interaction_found" for item in results)
     return {
-        "status": "no_verified_interaction_in_seed",
+        "status": "partial_data" if missing else ("interaction_found" if has_interaction else "no_verified_interaction_in_seed"),
         "drug_names": names,
-        "results": [],
-        "message": "Seed không có bản ghi cho các cặp này. Đây không phải xác nhận không có tương tác hoặc thuốc an toàn; hãy hỏi dược sĩ.",
+        "results": results,
+        "message": "Đã kiểm tra từng cặp; xem trạng thái riêng của mỗi cặp. Cặp thiếu dữ liệu chưa đủ căn cứ và không được xem là an toàn.",
     }
 
 

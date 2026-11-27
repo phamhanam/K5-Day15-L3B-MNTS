@@ -70,14 +70,29 @@ class SeedLookupTests(unittest.TestCase):
         self.assertTrue(result["results"][0]["sources"])
 
     def test_unknown_drug_prevents_interaction_safety_conclusion(self):
-        result = tools.check_interactions(["warfarin", "unknown medicine"])
-        self.assertEqual(result["status"], "no_verified_data")
-        self.assertIn("unknown medicine", result["unknown_drugs"])
+        result = tools.check_interactions(["warfarin", "ibuprofen", "unknown medicine"])
+        self.assertEqual(result["status"], "partial_data")
+        self.assertEqual(len(result["results"]), 3)
+        known_pair = next(item for item in result["results"] if item.get("risk_tag"))
+        self.assertEqual(known_pair["risk_tag"], "high_risk_refer_pharmacist")
+        unknown_pairs = [item for item in result["results"] if item["status"] == "no_verified_data"]
+        self.assertEqual(len(unknown_pairs), 2)
+        self.assertTrue(all("không thể kết luận" in item["message"] for item in unknown_pairs))
 
     def test_unlisted_pair_is_not_reported_as_safe(self):
-        result = tools.check_interactions(["ibuprofen", "ibuprofen"])
-        self.assertEqual(result["status"], "no_verified_interaction_in_seed")
-        self.assertIn("không phải xác nhận", result["message"])
+        records, error = tools._load_seed()
+        self.assertIsNone(error)
+        records.append({
+            "record_type": "drug_reference",
+            "name": "test-only-compound",
+            "active_ingredient": "test-only-compound",
+            "summary": "Synthetic test fixture, not medical content.",
+            "source_urls": ["https://example.test/fixture"],
+        })
+        with patch.object(tools, "_load_seed", return_value=(records, None)):
+            result = tools.check_interactions(["ibuprofen", "test-only-compound"])
+        self.assertEqual(result["results"][0]["status"], "no_verified_interaction_in_seed")
+        self.assertIn("không phải xác nhận", result["results"][0]["message"])
 
     def test_handoff_only_returns_unsubmitted_draft(self):
         result = tools.handoff_to_pharmacist("Cần dược sĩ xem xét", user_approved=True)

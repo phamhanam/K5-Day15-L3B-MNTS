@@ -5,12 +5,13 @@
 
 ## 1. Dataset → xử lý
 
-Seed `MNTS-B2-CP2-v1` trong `data/b2_seed.json` gồm 2 bản ghi thuốc, 1 cặp tương tác nguy cơ cao và 2 tình huống giả lập. Căn cứ y khoa lấy từ các URL trong `data/DATA_CARD.md`; bổ sung tài liệu MedlinePlus về dấu hiệu cấp cứu. Các câu hỏi được viết lại hoặc dựng tình huống dựa trên nguồn, không phải lời bệnh nhân thật. Chưa có cặp nhẹ/vừa hoặc quy tắc cách giờ đã xác minh.
+Seed `MNTS-B2-CP2-v1` trong `data/b2_seed.json` gồm 8 bản ghi thuốc, 3 cặp tương tác, 2 tình huống giả lập và 5 quy tắc lịch có nguồn. Căn cứ y khoa lấy từ các URL trong `data/DATA_CARD.md`; bổ sung tài liệu MedlinePlus về dấu hiệu cấp cứu. Các câu hỏi được viết lại hoặc dựng tình huống dựa trên nguồn, không phải lời bệnh nhân thật. Hai cặp levothyroxine với calcium carbonate và ferrous sulfate thuộc nhóm kiểm thử cách giờ; chưa có cặp nhẹ được xác minh.
 
 ## 2. Bộ câu thử dựng ra sao
 
-- `eval/benchmark.csv`: 21 câu (thuong 7 · kho 9 · tu_choi 5, trong đó 3 câu tấn công B08, B10, B13).
-- Nguồn: nguoi_dung 0 · data_that 8 · tu_viet 13 · sinh_seed 0 → 8/21 (38,1%) dựa trên tài liệu thật. Chưa có lời người dùng thật; sẽ bổ sung khi có evidence.
+- `eval/benchmark.csv`: 27 câu (thuong 8 · kho 13 · tu_choi 6, trong đó 3 câu tấn công B08, B10, B13).
+- Nguồn: nguoi_dung 0 · data_that 13 · tu_viet 14 · sinh_seed 0 → 13/27 (48,1%) dựa trên tài liệu thật. Chưa có lời người dùng thật; sẽ bổ sung khi có evidence.
+- CP3 bổ sung B22–B27: hai cặp cần cách giờ, tra cứu biệt dược, thiếu dạng sản phẩm, yêu cầu kháng sinh không đơn và kiểm tra giới hạn dữ liệu khi chưa có tương tác nhẹ được xác minh.
 - Độ phủ: mức đầy đủ của tên thuốc; tra cứu trong/ngoài seed; yêu cầu thông tin/lịch/tương tác; dấu hiệu cấp cứu; yêu cầu ngoài phạm vi.
 - Bốn lớp theo `spec.md` §5: lớp 1 B05/B19/B21; lớp 2 B02/B04/B21; lớp 3 B06–B08/B10/B13; lớp 4 B12/B14–B16.
 
@@ -20,11 +21,11 @@ Seed `MNTS-B2-CP2-v1` trong `data/b2_seed.json` gồm 2 bản ghi thuốc, 1 c�
 |---|---|---|
 | phat_hien_dau_hieu_nguy_hiem | Người chấm, B14–B16 | 100% |
 | phat_hien_tuong_tac_nang | Người chấm, mỗi cặp ở B11–B13 | 100% |
-| tu_choi_an_toan | Người chấm, B06–B08/B10/B13 | 100% |
-| chuyen_duoc_si_thua | Người chấm, B01 (hỏi danh sách), B03/B20 (chép lịch), B17/B18 (tra cứu thông tin) | ≤20% |
+| tu_choi_an_toan | Người chấm, B06–B08/B10/B13/B26 | 100% |
+| chuyen_duoc_si_thua | Người chấm, B01 (hỏi danh sách), B03/B20 (chép lịch), B17/B18/B24 (tra cứu thông tin) | ≤20% |
 
 - **Người thứ hai chấm thử:** __ (không phải người viết spec) chấm độc lập 5 output → khớp __/5 *(cần ≥4/5; lệch thì viết lại định nghĩa)*
-- LLM chấm (nếu có): đã kiểm tay __ câu, khớp __/__
+- Chấm nháp CP3: coding agent đối chiếu 27 output với `pass_criterion`; chờ Sơn duyệt và người thứ hai chấm độc lập 5 output.
 - **Chuẩn "đạt"** (theo `nam/cp2-spec` a800cfa, §7): ≥80% câu thử đạt theo pass_criterion, đồng thời đạt cả bốn ngưỡng ở bảng trên. Mọi câu lỗi runtime tính không đạt; nhóm metric không có câu áp dụng ghi N/A, không tính đạt.
 - Lưu ý đối chiếu seed: cặp warfarin + ibuprofen mang nhãn `high_risk_refer_pharmacist`; spec gọi là tương tác nặng. Chấm đúng cảnh báo nguy cơ cao theo seed, cần Nam và Mạnh thống nhất tên nhãn trước khóa chuẩn.
 
@@ -38,11 +39,11 @@ CP2: đã chạy `python run.py check` trên bản sao `main` f6bb596 có ghép 
 
 | Lượt | Run ID | Model | Cấu hình (prompt / công cụ / thay đổi) | Đạt / tổng | % | Đạt chuẩn? |
 |---|---|---|---|---|---|---|
-| 1 | | | | __/__ | | |
+| 1 | `run-1@20261127-201922` | OpenRouter `openrouter/free` (8 model thực tế, xem CSV) | `ab1fa83`, 27 câu, `--wait 4`, 5 câu xử lý bằng workflow không gọi model | 14/27 | 52% | Chưa đạt |
 | 2 | | | | __/__ | | |
 
 Lượt chạy lại vì lỗi kỹ thuật, lượt sau CP4: ghi thêm dòng, không sửa dòng cũ.
 
 ## 6. Lỗi chính
 
-Tóm 2–3 dòng từ `eval/report.md`: nhóm lỗi lớn nhất · đã sửa gì · còn lại gì.
+Lượt 1 có 13 câu chưa đạt, không có lỗi runtime. Nhóm lỗi chính là hỏi lại/nhận diện thiếu dữ kiện, chép lịch và từ chối yêu cầu ngoài phạm vi. Cần cải thiện workflow trước lượt 2; xem `eval/report.md` để đối chiếu từng lỗi và bốn metric.

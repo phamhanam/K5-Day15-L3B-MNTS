@@ -124,7 +124,21 @@ def call_ollama(system, user):
 - Không cần key.
 - **Rất chậm trên laptop:** ví dụ `gemma4:12b` mất 43–165 giây mỗi câu trên máy Mac. Chỉ hợp để thử luồng, không đủ nhanh để chạy hết bộ câu thử và 50 phiên mô phỏng.
 
-### 2.4 Nhà cung cấp khác (Gemini…)
+### 2.4 OpenRouter (router miễn phí)
+
+Trong `.env` dùng các biến sau; đặt key trực tiếp trong file local, không gửi key vào chat:
+
+```
+MODEL_PROVIDER=openrouter
+MODEL_NAME=openrouter/free
+API_KEY=<OpenRouter API key của nhóm>
+```
+
+`codebase/ai.py` gửi POST JSON tới `https://openrouter.ai/api/v1/chat/completions` với `Authorization: Bearer ...`. Mã `openrouter/free` yêu cầu OpenRouter chọn một model miễn phí phù hợp. Tên model thực tế được ghi từ trường `model` trong response. Token vào/ra lấy lần lượt từ `usage.prompt_tokens` và `usage.completion_tokens`; thiếu các trường usage thì request báo lỗi, không ước lượng.
+
+Để tạo key, vào tài khoản OpenRouter và tạo một API key trong trang Keys. Không gửi key cho coding agent. Free model có thể bị giới hạn lượt và model khả dụng có thể thay đổi; kiểm tra trang chính thức [Free Models Router](https://openrouter.ai/openrouter/free) và [Free Models](https://openrouter.ai/collections/free-models/) trước khi chạy eval. Không đưa thông tin sức khỏe nhận diện cá nhân vào request.
+
+### 2.5 Nhà cung cấp khác (Gemini…)
 
 1. Mở trang quickstart chính thức của hãng, chép ví dụ Python **ngắn nhất** gọi được 1 câu, dán vào hàm dưới.
 2. Bật `SHOW_RAW = True`, hỏi thử 1 câu, rồi xem câu trả lời và số token nằm ở trường nào trong phản hồi.

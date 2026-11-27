@@ -1,10 +1,69 @@
-"""Read-only, source-bounded tools for the B2 medication support prototype.
+"""Read-only, source-bounded tools for the B2 medication support prototype."""
+import json
+from itertools import combinations
+from pathlib import Path
 
-The repository currently contains no reviewed medication or interaction dataset.
-Accordingly lookup and interaction checks fail closed rather than invent facts.
-These helpers do not diagnose, prescribe, or change a user's treatment.
-"""
 from tracing import tool, TOOLS  # noqa: F401
+
+
+SEED_PATH = Path(__file__).resolve().parents[1] / "data" / "b2_seed.json"
+
+
+def _load_seed():
+    """Return seed records or a fail-closed error result."""
+    try:
+        with SEED_PATH.open(encoding="utf-8") as seed_file:
+            seed = json.load(seed_file)
+    except (OSError, json.JSONDecodeError):
+        return None, {
+            "status": "data_unavailable",
+            "message": "Không đọc được dữ liệu đã kiểm chứng; không thể tra cứu an toàn. Hãy hỏi dược sĩ.",
+        }
+
+    if not isinstance(seed, dict) or not isinstance(seed.get("records"), list):
+        return None, {
+            "status": "data_unavailable",
+            "message": "Cấu trúc dữ liệu tra cứu không hợp lệ; không thể đưa ra kết luận. Hãy hỏi dược sĩ.",
+        }
+    records = seed["records"]
+    if any(not isinstance(record, dict) for record in records):
+        return None, {
+            "status": "data_unavailable",
+            "message": "Dữ liệu tra cứu có bản ghi không hợp lệ; không thể đưa ra kết luận. Hãy hỏi dược sĩ.",
+        }
+
+    for record in records:
+        if record.get("record_type") == "interaction":
+            ingredients = record.get("ingredients")
+            if (not isinstance(ingredients, list) or len(ingredients) < 2
+                    or any(not isinstance(item, str) or not item.strip() for item in ingredients)
+                    or not isinstance(record.get("risk_tag"), str) or not record["risk_tag"].strip()
+                    or not isinstance(record.get("summary"), str) or not record["summary"].strip()
+                    or not _valid_sources(record.get("source_urls"))):
+                return None, {
+                    "status": "data_unavailable",
+                    "message": "Bản ghi tương tác thiếu trường hoặc nguồn hợp lệ; không thể đưa ra kết luận. Hãy hỏi dược sĩ.",
+                }
+    return records, None
+
+
+def _valid_sources(sources):
+    return isinstance(sources, list) and bool(sources) and all(
+        isinstance(source, str) and source.strip() for source in sources
+    )
+
+
+def _drug_record_is_valid(record):
+    return (
+        isinstance(record.get("name"), str) and bool(record["name"].strip())
+        and isinstance(record.get("active_ingredient"), str) and bool(record["active_ingredient"].strip())
+        and isinstance(record.get("summary"), str) and bool(record["summary"].strip())
+        and _valid_sources(record.get("source_urls"))
+    )
+
+
+def _normalize_name(value):
+    return " ".join(value.casefold().split())
 
 
 # Explicit emergency wording used only as a conservative escalation trigger.
@@ -58,11 +117,43 @@ def lookup_drug(drug_name: str) -> dict:
     Input: tên thuốc (str). Output: dict trạng thái và thông tin có nguồn; không tác động ra ngoài."""
     if not isinstance(drug_name, str) or not drug_name.strip():
         return {"status": "invalid_input", "drug_name": "", "message": "Vui lòng cung cấp tên thuốc để tra cứu."}
+    records, error = _load_seed()
+    if error:
+        return {**error, "drug_name": drug_name.strip(), "sources": []}
+
+    query = _normalize_name(drug_name)
+    matches = [
+        record for record in records
+        if record.get("record_type") == "drug_reference"
+        and any(_normalize_name(record.get(field, "")) == query
+                for field in ("name", "active_ingredient")
+                if isinstance(record.get(field), str))
+    ]
+    if not matches:
+        return {
+            "status": "no_verified_data",
+            "drug_name": drug_name.strip(),
+            "message": "Không tìm thấy tên thuốc trong dữ liệu đã kiểm chứng. Điều này không xác nhận thuốc an toàn; hãy kiểm tra tên/hoạt chất trên nhãn và hỏi dược sĩ.",
+            "sources": [],
+        }
+
+    record = matches[0]
+    if not _drug_record_is_valid(record):
+        return {
+            "status": "data_unavailable",
+            "drug_name": drug_name.strip(),
+            "message": "Bản ghi thuốc thiếu thông tin hoặc nguồn hợp lệ; không thể dùng để tư vấn. Hãy hỏi dược sĩ.",
+            "sources": [],
+        }
     return {
-        "status": "no_verified_data",
-        "drug_name": drug_name.strip(),
-        "message": "Chưa có dữ liệu thuốc được đối chiếu nguồn trong bản thử này. Hãy hỏi dược sĩ; không suy diễn cách dùng hoặc liều.",
-        "sources": [],
+        "status": "found",
+        "drug_name": record["name"],
+        "active_ingredient": record["active_ingredient"],
+        "dose_or_schedule": record.get("dose_or_schedule"),
+        "summary": record["summary"],
+        "sources": record["source_urls"],
+        "limits": record.get("limits", ""),
+        "message": "Thông tin chỉ là tóm lược nguồn, không phải hướng dẫn liều dùng cá nhân.",
     }
 
 
@@ -70,17 +161,69 @@ def lookup_drug(drug_name: str) -> dict:
 def check_interactions(drug_names: list) -> dict:
     """Kiểm tra tương tác trong tập dữ liệu đã đối chiếu.
     Input: danh sách tên thuốc (list[str]). Output: trạng thái, kết quả và nguồn; không tác động ra ngoài."""
-    if not isinstance(drug_names, (list, tuple)) or not drug_names or any(
+    if not isinstance(drug_names, (list, tuple)) or len(drug_names) < 2 or any(
         not isinstance(name, str) or not name.strip() for name in drug_names
     ):
-        return {"status": "invalid_input", "message": "Cần danh sách gồm ít nhất một tên thuốc hợp lệ.", "results": []}
+        return {"status": "invalid_input", "message": "Cần ít nhất hai tên thuốc hợp lệ để kiểm tra cặp tương tác.", "results": []}
     names = [name.strip() for name in drug_names]
+    records, error = _load_seed()
+    if error:
+        return {**error, "drug_names": names, "results": [], "sources": []}
+
+    normalized_names = {_normalize_name(name) for name in names}
+    drug_records = [record for record in records if record.get("record_type") == "drug_reference"]
+    known_names = set()
+    for record in drug_records:
+        if _drug_record_is_valid(record):
+            known_names.add(_normalize_name(record["name"]))
+            known_names.add(_normalize_name(record["active_ingredient"]))
+    unknown = [name for name in names if _normalize_name(name) not in known_names]
+    if unknown:
+        return {
+            "status": "no_verified_data",
+            "drug_names": names,
+            "unknown_drugs": unknown,
+            "results": [],
+            "sources": [],
+            "message": "Có thuốc chưa được nhận diện trong dữ liệu đã kiểm chứng. Không thể kết luận về các cặp; hãy xác nhận tên/hoạt chất với dược sĩ.",
+        }
+    if any(not _drug_record_is_valid(record) for record in drug_records):
+        return {
+            "status": "data_unavailable",
+            "drug_names": names,
+            "results": [],
+            "sources": [],
+            "message": "Có bản ghi thuốc thiếu thông tin hoặc nguồn hợp lệ; không thể kết luận về tương tác. Hãy hỏi dược sĩ.",
+        }
+
+    results = []
+    for first, second in combinations(normalized_names, 2):
+        pair = {first, second}
+        for record in records:
+            if record.get("record_type") != "interaction":
+                continue
+            ingredients = {_normalize_name(item) for item in record["ingredients"]}
+            if pair == ingredients:
+                results.append({
+                    "interaction_id": record.get("id", ""),
+                    "ingredients": record["ingredients"],
+                    "risk_tag": record["risk_tag"],
+                    "summary": record["summary"],
+                    "sources": record["source_urls"],
+                    "limits": record.get("limits", ""),
+                })
+    if results:
+        return {
+            "status": "interaction_found",
+            "drug_names": names,
+            "results": results,
+            "message": "Seed có cảnh báo cho cặp này. Hãy liên hệ dược sĩ/bác sĩ; không tự thay đổi hoặc ngừng thuốc.",
+        }
     return {
-        "status": "no_verified_data",
+        "status": "no_verified_interaction_in_seed",
         "drug_names": names,
-        "message": "Chưa có dữ liệu tương tác được đối chiếu trong bản thử này. Kết quả không xác nhận an toàn; hỏi dược sĩ trước khi phối hợp thuốc.",
         "results": [],
-        "sources": [],
+        "message": "Seed không có bản ghi cho các cặp này. Đây không phải xác nhận không có tương tác hoặc thuốc an toàn; hãy hỏi dược sĩ.",
     }
 
 

@@ -11,7 +11,7 @@ Hợp đồng (giữ nguyên để khung đo được token):
     Lỗi gọi model (hết lượt, sai key, mất mạng): cứ để exception bay ra — khung ghi lỗi vào cột error.
 
 Chế độ giả (mặc định khi .env chưa có MODEL_PROVIDER, hoặc MODEL_PROVIDER=fake):
-    trả một câu giả cố định, model "fake", token 0 — để luồng chạy hết từ trước CP2 (guide bước 3.2).
+    trả nguyên văn phần tổng hợp workflow đã truyền vào, model "fake", token 0.
     Lượt `run.py eval` / `run.py simulate` chạy bằng model giả KHÔNG được tính.
 
 Nối model thật: điền .env (chép từ .env.example), rồi viết nhánh gọi API ở dưới theo docs/connect-model.md
@@ -93,8 +93,9 @@ def call_openrouter(system: str, user: str) -> dict:
 @model_call
 def call_model(system: str, user: str) -> dict:
     if MODEL_PROVIDER == "fake":
-        last = (user.strip().splitlines() or [""])[-1]
-        return {"text": "[câu trả lời giả — chưa nối model] " + last[:60], "model": "fake", "tokens_in": 0, "tokens_out": 0}
+        # Deterministic pass-through: only the already-checked workflow result
+        # is returned. The mock does not infer, rewrite, or add medical facts.
+        return {"text": user, "model": "fake", "tokens_in": 0, "tokens_out": 0}
 
     if MODEL_PROVIDER == "openrouter":
         return call_openrouter(system, user)

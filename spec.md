@@ -39,7 +39,7 @@ Data BTC cấp đã dùng: Không có (Track B tự tìm bằng chứng từ rev
 - **Công cụ tra tương tác tiếng Anh (Drugs.com Interaction Checker):** Đáng học là phân mức tương tác rõ ràng (Major/Moderate/Minor) kèm nguồn; đáng né là giao diện tiếng Anh nhiều thuật ngữ y khoa và không xếp lịch uống theo bữa cho người nhà Việt Nam; mình khác ở chỗ dùng tiếng Việt dễ hiểu cho người sắp thuốc hộ và gắn cơ chế chuyển dược sĩ / cấp cứu 115 ngay khi có dấu hiệu nguy hiểm.
 
 ## §4. Thiết kế *(guide 2.2, 3.2)*
-- **Lát cắt MỘT CÂU:** Một người con sắp thuốc cho cha mẹ · nhập danh sách thuốc đang dùng · AI tra tương tác từng cặp bằng công cụ, quyết định cảnh báo mức nào và có chuyển dược sĩ không, đồng thời xếp lịch sáng, trưa, tối · người con nhận lịch uống kèm cảnh báo rõ ràng và nút "hỏi dược sĩ".
+- **Lát cắt MỘT CÂU:** Một người con sắp thuốc cho cha mẹ · nhập danh sách thuốc đang dùng · AI kiểm tra dấu hiệu nguy hiểm trước, tra tương tác theo dữ liệu đã kiểm nguồn để quyết định cảnh báo (`high_risk_refer_pharmacist`) hay chuyển dược sĩ, và chỉ xếp lịch sáng/trưa/tối khi có chỉ dẫn đã xác minh · người con nhận cảnh báo rõ ràng, lịch uống (hoặc câu hỏi xác minh/nút "hỏi dược sĩ").
 - **Không làm (≥3 điều):**
   1. Không chẩn đoán bệnh, không khẳng định "uống chung hoàn toàn an toàn" khi thuốc chưa có trong dữ liệu.
   2. Không kê đơn, không tự tính/đổi liều lượng thuốc cho người dùng.

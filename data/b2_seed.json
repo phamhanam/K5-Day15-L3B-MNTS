@@ -45,6 +45,100 @@
       "limits": "Không kết luận mức nguy cơ cá nhân hoặc đưa phương án thay thế. Cần hỏi dược sĩ/bác sĩ."
     },
     {
+      "id": "DRUG-LEVOTHYROXINE-001",
+      "record_type": "drug_reference",
+      "name": "levothyroxine",
+      "active_ingredient": "levothyroxine sodium",
+      "aliases": ["Synthroid", "Levoxyl", "Tirosint", "Unithroid"],
+      "dose_or_schedule": null,
+      "schedule_hint": "Nguồn người bệnh: thường dùng buổi sáng lúc đói, 30–60 phút trước bữa sáng. Cần theo đúng nhãn/đơn của chính sản phẩm.",
+      "source_urls": ["https://medlineplus.gov/druginfo/meds/a682461.html"],
+      "label": "source_summary",
+      "limits": "Không nhập liều hoặc tạo lịch cá nhân; các biệt dược có thể khác nhau, không tự đổi nhãn hiệu."
+    },
+    {
+      "id": "DRUG-CALCIUM-CARBONATE-001",
+      "record_type": "drug_reference",
+      "name": "calcium carbonate",
+      "active_ingredient": "calcium carbonate",
+      "aliases": ["Tums", "Rolaids", "Caltrate 600", "canxi carbonat"],
+      "dose_or_schedule": null,
+      "schedule_hint": "Khi dùng như thực phẩm bổ sung, MedlinePlus hướng dẫn dùng cùng/trong hoặc sau bữa ăn. Không áp dụng lịch này cho mọi sản phẩm hoặc mục đích dùng.",
+      "source_urls": ["https://medlineplus.gov/druginfo/meds/a601032.html"],
+      "label": "source_summary",
+      "limits": "Nhãn hiệu có thể là sản phẩm phối hợp hoặc dạng/hàm lượng khác; cần đọc đúng nhãn."
+    },
+    {
+      "id": "DRUG-FERROUS-SULFATE-001",
+      "record_type": "drug_reference",
+      "name": "ferrous sulfate",
+      "active_ingredient": "ferrous sulfate (iron supplement)",
+      "aliases": ["iron supplement", "Feosol", "Slow Fe", "sắt sulfat"],
+      "dose_or_schedule": null,
+      "schedule_hint": "Sắt hấp thu tốt hơn khi bụng đói, nhưng nếu gây khó chịu dạ dày có thể cần dùng với ít thức ăn; hỏi chuyên môn theo đúng sản phẩm.",
+      "source_urls": ["https://medlineplus.gov/druginfo/meds/a682778.html", "https://medlineplus.gov/ency/article/007478.htm"],
+      "label": "source_summary",
+      "limits": "Không suy ra liều, tần suất hoặc thời gian điều trị; tránh nhầm với phối hợp nhiều thành phần."
+    },
+    {
+      "id": "DRUG-METFORMIN-001",
+      "record_type": "drug_reference",
+      "name": "metformin",
+      "active_ingredient": "metformin hydrochloride",
+      "aliases": ["Glucophage", "Fortamet", "Glumetza", "Riomet"],
+      "dose_or_schedule": null,
+      "schedule_hint": "Nhãn DailyMed cho viên metformin thường nêu dùng cùng bữa ăn; dạng giải phóng kéo dài có hướng dẫn riêng. Xác nhận dạng bào chế và đơn thuốc.",
+      "source_urls": ["https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=1e8136e0-cc98-41e4-ad4b-a8fc27fb4daa", "https://medlineplus.gov/ency/patientinstructions/000989.htm"],
+      "label": "source_summary",
+      "limits": "Không đưa liều khởi đầu/tăng liều của nhãn vào lịch cho người dùng; biệt dược có thể đã ngừng lưu hành ở một số nơi."
+    },
+    {
+      "id": "DRUG-AMLODIPINE-001",
+      "record_type": "drug_reference",
+      "name": "amlodipine",
+      "active_ingredient": "amlodipine",
+      "aliases": ["Norvasc", "Amlodipin", "amlodipine besylate"],
+      "dose_or_schedule": null,
+      "schedule_hint": "MedlinePlus: dùng một lần mỗi ngày, cùng hoặc không cùng thức ăn, vào khoảng cùng thời điểm mỗi ngày; giữ nguyên chỉ định trên đơn.",
+      "source_urls": ["https://medlineplus.gov/druginfo/meds/a692044.html"],
+      "label": "source_summary",
+      "limits": "Không dùng lịch này để suy ra liều hay xử trí đau ngực; tên biệt dược và dạng phối hợp cần kiểm tra hoạt chất."
+    },
+    {
+      "id": "DRUG-OMEPRAZOLE-001",
+      "record_type": "drug_reference",
+      "name": "omeprazole",
+      "active_ingredient": "omeprazole",
+      "aliases": ["Prilosec", "omeprazol"],
+      "dose_or_schedule": null,
+      "schedule_hint": "MedlinePlus: dạng kê đơn thường dùng trước bữa ăn; dạng không kê đơn thường dùng buổi sáng ít nhất 1 giờ trước ăn theo nhãn. Không gộp các dạng/điều trị khác nhau thành lịch chung.",
+      "source_urls": ["https://medlineplus.gov/druginfo/meds/a693050.html"],
+      "label": "source_summary",
+      "limits": "Tần suất phụ thuộc chỉ định và dạng sản phẩm; chỉ dùng hướng dẫn trên đơn/bao bì."
+    },
+    {
+      "id": "INT-LEVOTHYROXINE-CALCIUM-001",
+      "record_type": "interaction",
+      "ingredients": ["levothyroxine", "calcium carbonate"],
+      "clinical_severity": null,
+      "eval_bucket": "moderate_timing_separation",
+      "summary": "Calcium carbonate có thể làm giảm hấp thu levothyroxine. Nhãn DailyMed khuyên tách ít nhất 4 giờ. Nhãn moderate chỉ là nhóm kiểm thử workflow của nhóm, không phải phân loại mức độ lâm sàng áp dụng cho mọi người.",
+      "schedule_constraint": {"minimum_separation_hours": 4, "direction": "either_side", "source_required": true},
+      "source_urls": ["https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=0b94e62c-eb04-47fd-b6ec-a70c588d7cd7", "https://medlineplus.gov/druginfo/meds/a682461.html"],
+      "label": "source_summary_with_internal_eval_bucket"
+    },
+    {
+      "id": "INT-LEVOTHYROXINE-IRON-001",
+      "record_type": "interaction",
+      "ingredients": ["levothyroxine", "ferrous sulfate"],
+      "clinical_severity": null,
+      "eval_bucket": "moderate_timing_separation",
+      "summary": "Ferrous sulfate có thể làm giảm hấp thu levothyroxine. Nhãn DailyMed khuyên tách ít nhất 4 giờ. Nhãn moderate chỉ là nhóm kiểm thử workflow của nhóm, không phải phân loại mức độ lâm sàng áp dụng cho mọi người.",
+      "schedule_constraint": {"minimum_separation_hours": 4, "direction": "either_side", "source_required": true},
+      "source_urls": ["https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=0b94e62c-eb04-47fd-b6ec-a70c588d7cd7", "https://medlineplus.gov/druginfo/meds/a682461.html"],
+      "label": "source_summary_with_internal_eval_bucket"
+    },
+    {
       "id": "CASE-SYN-001",
       "record_type": "demo_case",
       "pharmacy_name": "Nhà thuốc Bình An (hư cấu)",
@@ -66,9 +160,41 @@
       "seed": "MNTS-B2-CP2-v1"
     }
   ],
+  "schedule_rules": [
+    {
+      "id": "SCHED-LEVOTHYROXINE-FASTING-001",
+      "applies_to": ["levothyroxine sodium"],
+      "rule": "Usually on an empty stomach 30–60 minutes before breakfast; follow the individual product label and prescription.",
+      "source_urls": ["https://medlineplus.gov/druginfo/meds/a682461.html"]
+    },
+    {
+      "id": "SCHED-LEVOTHYROXINE-SEPARATION-001",
+      "applies_to": ["levothyroxine sodium", "calcium carbonate", "ferrous sulfate"],
+      "rule": "Keep calcium carbonate and ferrous sulfate at least 4 hours apart from levothyroxine.",
+      "source_urls": ["https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=0b94e62c-eb04-47fd-b6ec-a70c588d7cd7"]
+    },
+    {
+      "id": "SCHED-METFORMIN-MEALS-001",
+      "applies_to": ["metformin hydrochloride immediate-release tablets"],
+      "rule": "The cited label gives administration with meals; confirm formulation and prescription before scheduling.",
+      "source_urls": ["https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=1e8136e0-cc98-41e4-ad4b-a8fc27fb4daa"]
+    },
+    {
+      "id": "SCHED-AMLODIPINE-SAME-TIME-001",
+      "applies_to": ["amlodipine"],
+      "rule": "Once daily around the same time, with or without food, as directed on the prescription.",
+      "source_urls": ["https://medlineplus.gov/druginfo/meds/a692044.html"]
+    },
+    {
+      "id": "SCHED-OMEPRAZOLE-BEFORE-MEAL-001",
+      "applies_to": ["omeprazole"],
+      "rule": "Timing depends on prescription versus OTC formulation and indication; use the applicable label, not a generic schedule.",
+      "source_urls": ["https://medlineplus.gov/druginfo/meds/a693050.html"]
+    }
+  ],
   "unfilled_categories": {
     "mild_or_moderate_interaction_pairs": "Chưa có cặp được xác minh nguồn; không được điền bằng phỏng đoán.",
-    "spacing_rules": "Chưa có quy tắc cụ thể; yêu cầu xem đơn/tờ hướng dẫn và hỏi dược sĩ.",
-    "common_medicine_catalog": "Chưa đủ dữ liệu đã kiểm tra nhãn sản phẩm; chưa dùng để tra liều/cách uống."
+    "spacing_rules": "Đã có 5 schedule_rules có nguồn, gồm tách levothyroxine khỏi calcium carbonate/ferrous sulfate ít nhất 4 giờ và các gợi ý thời điểm theo dạng thuốc. Chưa đủ để tạo lịch cá nhân; cần đơn và xác nhận đúng dạng sản phẩm.",
+    "common_medicine_catalog": "Đã bổ sung 6 thuốc phổ biến với aliases và nguồn công khai. Danh mục vẫn là seed giới hạn, không đầy đủ mọi biệt dược/hàm lượng; không dùng để suy liều hoặc khẳng định an toàn."
   }
 }

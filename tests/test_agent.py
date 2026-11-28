@@ -39,7 +39,67 @@ class AgentWorkflowTests(unittest.TestCase):
         self.mock_model = self.model_patch.start()
         self.addCleanup(self.model_patch.stop)
 
+    def test_confirmed_inline_schedule_copies_label_verbatim(self):
+        instruction = "Theo nhãn thuốc đã đối chiếu, uống lúc bụng đói, 30–60 phút trước bữa sáng."
+        for name in ("levothyroxine", "warfarin"):
+            with self.subTest(name=name), patch.object(
+                agent.tools, "build_schedule", wraps=agent.tools.build_schedule
+            ) as build:
+                result = agent.answer(
+                    "Xếp lịch uống theo đơn đã xác nhận. Chỉ giữ nguyên chỉ dẫn dưới đây, "
+                    f"không tự thêm liều hoặc thời điểm: {name}: {instruction}"
+                )
+                build.assert_called_once_with([{"medication": name, "instruction": instruction}])
+                self.assertIn(instruction, result["output"])
+
     def test_emergency_stops_before_lookup(self):
+        with patch.object(agent, "_extract_seeded_drugs") as extract:
+            output = agent.answer(
+                "Tôi đang dùng thuốc chống đông và bị chảy máu không cầm được, tôi nên làm gì?"
+            )["output"]
+        self.assertIn("115", output)
+        self.assertIn("cấp cứu ngay", output)
+        extract.assert_not_called()
+        self.mock_model.assert_not_called()
+
+    def test_inline_schedule_entries_preserve_punctuation_and_last_entry(self):
+        prefix = "Xếp lịch uống theo đơn đã xác nhận. Chỉ giữ nguyên chỉ dẫn: "
+        for first, second in (
+            ("Uống lúc bụng đói trước bữa sáng.", "Uống theo hướng dẫn trên đơn đã xác nhận."),
+            ("Theo nhãn:  giữ nguyên 08:30.", "Ghi chú:  giữ nguyên."),
+        ):
+            with self.subTest(first=first), patch.object(
+                agent.tools, "build_schedule", wraps=agent.tools.build_schedule
+            ) as build:
+                agent.answer(prefix + f"levothyroxine: {first} warfarin: {second}")
+                build.assert_called_once_with([
+                    {"medication": "levothyroxine", "instruction": first},
+                    {"medication": "warfarin", "instruction": second},
+                ])
+
+    def test_incomplete_or_unknown_inline_schedule_requires_review(self):
+        for tail in ("warfarin:", "XYZ-123: Theo nhãn."):
+            with self.subTest(tail=tail), patch.object(agent.tools, "build_schedule") as build:
+                output = agent.answer("Lập lịch theo đơn đã xác nhận: levothyroxine: Theo đơn. " + tail)
+                build.assert_not_called()
+                self.assertIn("dược sĩ", output["output"])
+
+    def test_copy_confirmed_schedule_with_unlisted_pair(self):
+        text = ("Xếp lịch theo đơn đã xác nhận:\n"
+                "levothyroxine: Theo chỉ dẫn A trên nhãn\nwarfarin: Theo chỉ dẫn B trên đơn")
+        with patch.object(agent.tools, "build_schedule", wraps=agent.tools.build_schedule) as build:
+            output = agent.answer(text)["output"]
+            build.assert_called_once_with([
+                {"medication": "levothyroxine", "instruction": "Theo chỉ dẫn A trên nhãn"},
+                {"medication": "warfarin", "instruction": "Theo chỉ dẫn B trên đơn"},
+            ])
+            self.assertIn("không phải xác nhận", output)
+            build.reset_mock()
+            output = agent.answer("Kiểm tra tương tác và " + text)["output"]
+            build.assert_not_called()
+            self.assertIn("dược sĩ", output)
+
+    def test_emergency_gate_stops_before_lookup_with_mocked_flag(self):
         with patch.object(agent.tools, "check_red_flags", return_value={"urgency": "emergency", "message": "Gọi 115"}), \
                 patch.object(agent.tools, "advise_see_doctor", return_value={"message": "Đi cấp cứu"}) as advise, \
                 patch.object(agent.tools, "lookup_drug") as lookup:

@@ -114,7 +114,7 @@ def _medication_list_fields(text: str) -> list[str]:
 
 def _is_schedule_request(text: str) -> bool:
     lowered = text.casefold()
-    return any(term in lowered for term in ("xếp lịch", "lịch uống", "sắp thuốc", "sắp lịch", "thời điểm uống"))
+    return any(term in lowered for term in ("xếp lịch", "lập lịch", "lịch uống", "sắp thuốc", "sắp lịch", "thời điểm uống"))
 
 
 def _is_out_of_scope_request(text: str) -> bool:
@@ -138,10 +138,27 @@ def _parse_confirmed_instructions(text: str, drug_names: list):
     instructions = {}
     conflicts = []
     ambiguous_terms = ("hoặc", "không chắc", "chưa rõ", "mâu thuẫn", "không nhớ")
-    for line in text.splitlines():
+    # Insert entry boundaries only before a medication label, leaving punctuation
+    # (including times and explanatory colons) in the preceding instruction.
+    labels = ["[^\\S\\n]+".join(map(re.escape, name.split())) for name in expected]
+    if not labels:
+        return None, "Vui lòng xác minh tên thuốc trên đơn hoặc nhãn."
+    label = "(?:" + "|".join(labels) + ")"
+    entry_boundary = re.compile(r"[^\S\n]+(?=" + label + r"[^\S\n]*:)", re.IGNORECASE)
+    # Also validate unverified labels at explicit sentence/list boundaries.
+    unknown_boundary = re.compile(
+        r"(?<=[.;])[^\S\n]+(?=(?:[A-Za-z][\w-]*|thuốc\s+[\w-]+)[^\S\n]*:)",
+        re.IGNORECASE,
+    )
+    entries = unknown_boundary.sub("\n", entry_boundary.sub("\n", text))
+    for line in entries.splitlines():
         candidate, separator, instruction = line.strip().lstrip("-*• ").partition(":")
         if not separator:
             continue
+        if candidate.casefold().startswith(("xếp lịch", "lập lịch", "sắp lịch", "lịch uống")):
+            inline_name, inline_separator, inline_instruction = instruction.partition(":")
+            if inline_separator:
+                candidate, instruction = inline_name.strip(), inline_instruction
         normalized_name = " ".join(candidate.casefold().split())
         if normalized_name not in expected:
             if instruction.strip() and not any(
@@ -283,8 +300,10 @@ def answer(text: str) -> dict:
         interaction_text = _render_interactions(interaction_result)
         refer = interaction_result.get("status") in {"no_verified_data", "data_unavailable"} or any(
             item.get("risk_tag") == "high_risk_refer_pharmacist" or item.get("status") in {
-                "no_verified_data", "data_unavailable", "no_verified_interaction_in_seed", "interaction_unclassified"
+                "no_verified_data", "data_unavailable", "interaction_unclassified"
             }
+            or (item.get("status") == "no_verified_interaction_in_seed"
+                and (interaction_request or not schedule_request))
             for item in pair_results
         )
         if needs_clarification:

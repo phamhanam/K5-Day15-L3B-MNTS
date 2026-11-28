@@ -54,11 +54,19 @@ def _valid_sources(sources):
     )
 
 
+def _reference_text(record):
+    for field in ("summary", "schedule_hint"):
+        value = record.get(field)
+        if isinstance(value, str) and value.strip():
+            return value
+    return ""
+
+
 def _drug_record_is_valid(record):
     return (
         isinstance(record.get("name"), str) and bool(record["name"].strip())
         and isinstance(record.get("active_ingredient"), str) and bool(record["active_ingredient"].strip())
-        and isinstance(record.get("summary"), str) and bool(record["summary"].strip())
+        and bool(_reference_text(record))
         and _valid_sources(record.get("source_urls"))
     )
 
@@ -81,6 +89,8 @@ def _normalize_name(value):
 _EMERGENCY_PHRASES = (
     "khó thở", "khong tho duoc", "đau ngực dữ dội", "dau nguc du doi",
     "bất tỉnh", "bat tinh", "co giật", "co giat", "chảy máu nhiều", "chay mau nhieu",
+    "chảy máu không cầm được", "chay mau khong cam duoc",
+    "không cầm được máu", "khong cam duoc mau",
 )
 
 
@@ -160,7 +170,7 @@ def lookup_drug(drug_name: str) -> dict:
         "drug_name": record["name"],
         "active_ingredient": record["active_ingredient"],
         "dose_or_schedule": record.get("dose_or_schedule"),
-        "summary": record["summary"],
+        "summary": _reference_text(record),
         "sources": record["source_urls"],
         "limits": record.get("limits", ""),
         "message": "Thông tin chỉ là tóm lược nguồn, không phải hướng dẫn liều dùng cá nhân.",

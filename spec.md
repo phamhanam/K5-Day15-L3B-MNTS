@@ -136,7 +136,7 @@ flowchart TD
 
 ## §10. Phân công & changelog
 - Phân công có tên (chi tiết trong `TASK.md`): Phạm Hà Nam (`2A202604023`, Đội trưởng — Product, Spec, Slide/Video, Form) · Nguyễn Đức Mạnh (`2A202603731` — Evidence Discovery & Data Y khoa) · Vũ Trọng Thắng (`2A202604022` — Codebase, Tools B2 & AI thật) · Đào Đức Sơn (`2A202604105` — Benchmark, Metrics, Eval & Cost).
-- Dùng AI vào việc gì (chi tiết `docs/ai-usage.md`): *(Cập nhật trước 23:59 T7)*
+- Dùng AI vào việc gì (chi tiết `docs/ai-usage.md`): Nhóm dùng trợ lý AI và coding agent để dựng khung code `codebase/`, viết unit test, chuẩn hóa dữ liệu `data/b2_seed.json`, hỗ trợ rà soát câu chữ đặc tả `spec.md`/`canvas.md`, đối chiếu nháp `pass_criterion` và trình bày `slides/demo-slides.html` → `demo-slides.pdf`. Mọi nội dung chuyên môn y khoa, dữ liệu bằng chứng và kết quả chấm đều được thành viên kiểm tra thủ công theo nguồn công khai và không chỉnh sửa sau CP4.
 - Nhật ký thay đổi — **mọi thay đổi sau CP2 19:30 Thứ Sáu 27/11 phải có dòng ở đây**:
 
 **CP2 → CP4**
@@ -148,8 +148,8 @@ flowchart TD
 | Sáng 28/11 (CP3) | Mở rộng `eval/benchmark.csv` từ 21 lên `27` câu (`B22–B27`) | Bổ sung 2 cặp tách giờ, biệt dược (`Norvasc`), thiếu dạng SP, kháng sinh (`eval/README.md`). |
 | Trưa 28/11 (trước L2) | PR #14 (`3793b01`): tách danh sách thuốc, giữ tên chưa xác minh để hỏi lại, nhận diện chảy máu, dùng `schedule_hint` | Nhắm vào 6 câu trượt thiếu làm rõ dữ kiện ở L1 → L2 tăng `14/27 (52%)` → `18/27 (67%)` (`eval/report.md`). |
 
-**Sau CP4 (đến 23:59 Thứ Bảy 28/11)**
+**Sau CP4 (đến 23:59 Thứ Bảy 28/11)** (sửa theo góp ý — không sửa chuẩn "đạt", câu thử, số bằng chứng, kết quả các lượt đã chạy)
 
 | Thời điểm | Đổi gì | Vì sao |
 |---|---|---|
-| *(Cập nhật sau CP4)* | | |
+| 28/11 (sau CP4, trước 23:59) | Không chỉnh sửa code, dữ liệu, chuẩn `"đạt"`, bộ câu thử hay kết quả đánh giá nào sau CP4; chỉ hoàn thiện tài liệu đóng gói (`spec.md §10`, `docs/ai-usage.md`, `reflection/*.md`). | Tuân thủ đúng quy định khóa số liệu sau CP4 và hoàn tất hồ sơ đóng gói cuối của BTC. |

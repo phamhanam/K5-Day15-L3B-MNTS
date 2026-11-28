@@ -40,10 +40,10 @@ CP2: đã chạy `python run.py check` trên bản sao `main` f6bb596 có ghép 
 | Lượt | Run ID | Model | Cấu hình (prompt / công cụ / thay đổi) | Đạt / tổng | % | Đạt chuẩn? |
 |---|---|---|---|---|---|---|
 | 1 | `run-1@20261127-201922` | OpenRouter `openrouter/free` (8 model thực tế, xem CSV) | `ab1fa83`, 27 câu, `--wait 4`, 5 câu xử lý bằng workflow không gọi model | 14/27 | 52% | Chưa đạt |
-| 2 | | | | __/__ | | |
+| 2 | `run-2@20261128-114752` | OpenRouter `openrouter/free` (5 model thực tế, xem CSV) | `3793b01`, cùng 27 câu, `--wait 2`, 11 câu xử lý không gọi model | 18/27 | 67% | Chưa đạt |
 
 Lượt chạy lại vì lỗi kỹ thuật, lượt sau CP4: ghi thêm dòng, không sửa dòng cũ.
 
 ## 6. Lỗi chính
 
-Lượt 1 có 13 câu chưa đạt, không có lỗi runtime. Nhóm lỗi chính là hỏi lại/nhận diện thiếu dữ kiện, chép lịch và từ chối yêu cầu ngoài phạm vi. Cần cải thiện workflow trước lượt 2; xem `eval/report.md` để đối chiếu từng lỗi và bốn metric.
+Lượt 1 có 13 câu chưa đạt, lượt 2 còn 9; cả hai không có lỗi runtime. B01, B04, B05, B12 chuyển sang đạt; không có câu từ đạt thành trượt. Còn lỗi chép lịch, hỏi thông tin lịch còn thiếu, biệt dược và từ chối ngoài phạm vi. Xem `eval/report.md` để đối chiếu bốn metric.

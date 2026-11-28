@@ -97,26 +97,88 @@ class AgentWorkflowTests(unittest.TestCase):
         handoff.assert_called_once()
         self.assertIn("Chưa có dữ liệu", result["output"])
 
-    def test_all_pairs_are_reported_before_handoff(self):
-        results = [
-            {"pair": ["warfarin", "ibuprofen"], "status": "interaction_found",
-             "risk_tag": "high_risk_refer_pharmacist", "summary": "Cảnh báo nguồn seed",
-             "sources": ["https://source.test/warning"]},
-            {"pair": ["warfarin", "[thuốc chưa nhận diện]"], "status": "no_verified_data",
-             "message": "Chưa đủ căn cứ cho cặp này", "sources": []},
-            {"pair": ["ibuprofen", "[thuốc chưa nhận diện]"], "status": "no_verified_data",
-             "message": "Chưa đủ căn cứ cho cặp này", "sources": []},
-        ]
-        with patch.object(agent.tools, "check_red_flags", return_value={"urgency": "unknown", "message": ""}), \
-                patch.object(agent, "_extract_seeded_drugs", return_value=["warfarin", "ibuprofen"]), \
-                patch.object(agent.tools, "lookup_drug", side_effect=[found_drug(), found_drug("ibuprofen")]), \
-                patch.object(agent.tools, "check_interactions", return_value={"status": "partial_data", "results": results}) as check, \
-                patch.object(agent.tools, "handoff_to_pharmacist", side_effect=lambda summary: {"draft": summary, "message": "not sent"}):
-            result = agent.answer("warfarin, ibuprofen và Xarelto có tương tác không?")
-        self.assertEqual(check.call_args.args[0], ["warfarin", "ibuprofen", "[thuốc chưa nhận diện]"])
-        self.assertIn("Cảnh báo nguồn seed", result["output"])
-        self.assertIn("Chưa đủ căn cứ cho cặp này", result["output"])
-        self.assertIn("https://source.test/warning", result["output"])
+    def test_verified_warning_before_clarification_and_handoff(self):
+        check_interactions = agent.tools.check_interactions
+        handoff_to_pharmacist = agent.tools.handoff_to_pharmacist
+        drafts = []
+
+        def capture_draft(summary):
+            draft = handoff_to_pharmacist(summary)
+            drafts.append(draft)
+            return draft
+
+        inputs = (
+            ("warfarin, ibuprofen và Xarelto có tương tác không?", ("Xarelto",)),
+            ("Mẹ uống vitamin C, ibuprofen, warfarin, thuốc dạ dày và thuốc huyết áp "
+             "chưa rõ tên. Kiểm tra giúp mình.", ("vitamin C", "thuốc dạ dày", "thuốc huyết áp")),
+        )
+        for text, unverified in inputs:
+            with self.subTest(text=text), \
+                    patch.object(agent.tools, "check_interactions", wraps=check_interactions) as check, \
+                    patch.object(agent.tools, "handoff_to_pharmacist", side_effect=capture_draft), \
+                    patch.object(agent.tools, "build_schedule") as schedule:
+                output = agent.answer(text)["output"]
+                check.assert_called_once()
+                self.assertCountEqual(check.call_args.args[0], ["warfarin", "ibuprofen"])
+                schedule.assert_not_called()
+                self.assertIn("high_risk_refer_pharmacist", output)
+                self.assertIn("chảy máu", output)
+                self.assertIn("https://www.medlineplus.gov/druginfo/meds/a682277.html", output)
+                self.assertIn("Cần dược sĩ rà soát", output)
+                self.assertLess(output.index("Cảnh báo tương tác"), output.index("hoạt chất trên nhãn"))
+                unverified_line = next(line for line in output.splitlines() if "Chưa có dữ liệu kiểm chứng" in line)
+                for label in unverified:
+                    self.assertIn(label, unverified_line)
+                self.assertIs(drafts[-1]["sent"], False)
+        self.mock_model.assert_not_called()
+
+    def test_named_unverified_drug_is_preserved_in_interaction_requests(self):
+        inputs = (
+            ("Tôi đang sử dụng warfarin và aspirin. Hai thuốc này có tương tác với nhau không?",
+             "warfarin", "aspirin"),
+            ("Warfarin và Aspirin có dùng chung được không?", "warfarin", "Aspirin"),
+            ("Warfarin có tương tác với Aspirin không?", "warfarin", "Aspirin"),
+            ("Thuốc warfarin, Aspirin", "warfarin", "Aspirin"),
+            ("Tôi uống warfarin, Aspirin và không nhớ tên thuốc thứ ba.", "warfarin", "Aspirin"),
+            ("Kiểm tra tương tác giữa ibuprofen + XYZ-123 giúp tôi.", "ibuprofen", "XYZ-123"),
+            ("Danh sách thuốc:warfarin; Foo Bar. Hai thuốc có tương tác không?", "warfarin", "Foo Bar"),
+        )
+        for text, known, unknown in inputs:
+            with self.subTest(text=text), patch.object(agent.tools, "check_interactions") as check:
+                output = agent.answer(text)["output"]
+                self.assertIn(f"Thuốc đã nhận diện: {known}", output)
+                self.assertIn(f"Chưa có dữ liệu kiểm chứng tương ứng cho: “{unknown}”.", output)
+                self.assertIn("Chưa đủ căn cứ kết luận tương tác", output)
+                self.assertIn("hoạt chất trên nhãn", output)
+                self.assertNotIn("[thuốc chưa nhận diện]", output)
+                check.assert_not_called()
+        self.mock_model.assert_not_called()
+
+    def test_incomplete_list_asks_for_all_names_without_adding_a_fake_drug(self):
+        text = "Mẹ đang uống warfarin, ibuprofen và còn một thuốc chưa rõ tên. Nhờ kiểm tra."
+        output = agent.answer(text)["output"]
+        self.assertIn("Thuốc đã nhận diện", output)
+        self.assertIn("chảy máu", output)
+        self.assertIn("còn thiếu tên", output)
+        self.assertIn("bổ sung danh sách đầy đủ", output)
+        self.assertNotIn("[thuốc chưa nhận diện]", output)
+        self.mock_model.assert_not_called()
+
+    def test_single_named_drug_with_another_unnamed_drug_asks_for_label(self):
+        output = agent.answer("Tôi đang dùng warfarin. Còn một thuốc chưa rõ tên.")["output"]
+        self.assertIn("Thuốc đã nhận diện: warfarin", output)
+        self.assertIn("còn thiếu tên", output)
+        self.assertIn("hoạt chất trên nhãn", output)
+        self.assertNotIn("Chưa có dữ liệu kiểm chứng tương ứng cho:", output)
+        self.mock_model.assert_not_called()
+
+    def test_request_words_do_not_become_a_third_drug(self):
+        output = agent.answer(
+            "Tôi đang dùng warfarin và muốn kiểm tra tương tác với ibuprofen."
+        )["output"]
+        self.assertIn("high_risk_refer_pharmacist", output)
+        self.assertNotIn("Chưa có dữ liệu kiểm chứng tương ứng cho:", output)
+        self.assertNotIn("bổ sung danh sách đầy đủ", output)
 
     def test_interactions_run_before_handoff_when_drug_lookup_is_incomplete(self):
         interaction = {"status": "interaction_found", "results": [{

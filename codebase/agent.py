@@ -9,6 +9,29 @@ Không thêm thuốc, tương tác, liều, lịch, hướng dẫn y tế hoặc
 Giữ nguyên các cảnh báo, giới hạn, trạng thái thiếu dữ liệu và nguồn.
 Nếu không thể diễn đạt mà không thêm thông tin, hãy trả nguyên văn nội dung workflow."""
 
+MEDICATION_LIST_START = re.compile(
+    r"\b(?:kiểm tra tương tác (?:giữa|của)|danh sách thuốc|"
+    r"tên trên (?:giấy|nhãn|hộp) ghi|"
+    r"(?:đang\s+)?(?:sử dụng|dùng|uống)(?:\s+(?:chung|cùng lúc|cùng nhau|cùng))?)"
+    r"(?:\s*:\s*|\s+)",
+    re.IGNORECASE,
+)
+MEDICATION_LIST_END = re.compile(
+    r"\s+(?:có (?:bị )?tương tác|(?:uống|dùng) (?:chung|cùng nhau|cùng lúc)|"
+    r"có (?:dùng|uống) (?:chung|cùng nhau|cùng lúc|cùng)|hoàn toàn an toàn|"
+    r"kỵ nhau|(?:có )?được không|nhưng|(?:giúp (?:tôi|mình|em)|không)(?=\s*$))\b"
+    r"|[,;]\s*(?:xin |nhờ |vui lòng )?(?:kiểm tra|cho hỏi|xin hỏi)\b",
+    re.IGNORECASE,
+)
+MEDICATION_LIST_SEPARATOR = re.compile(
+    r"[,;/+\n]|\s+(?:và|cùng với|cùng|với)\s+", re.IGNORECASE,
+)
+INCOMPLETE_MEDICATION_LIST = re.compile(
+    r"\b(?:chưa rõ tên|không rõ tên|không nhớ tên|chỉ nhớ tên|chưa đủ tên|"
+    r"chưa (?:kể|liệt kê) hết|(?:các |một )?(?:loại )?thuốc khác)\b",
+    re.IGNORECASE,
+)
+
 
 def _respond(workflow_result: str) -> dict:
     """Accept model output only if it is byte-for-byte the checked workflow."""
@@ -46,7 +69,47 @@ def _extract_seeded_drugs(text: str) -> list:
 
 def _is_interaction_request(text: str) -> bool:
     lowered = text.casefold()
-    return any(term in lowered for term in ("tương tác", "uống chung", "kết hợp", "cùng lúc", "phối hợp", "kỵ nhau"))
+    return any(term in lowered for term in (
+        "tương tác", "uống chung", "dùng chung", "uống cùng", "dùng cùng",
+        "kết hợp", "cùng lúc", "phối hợp", "kỵ nhau",
+    ))
+
+
+def _medication_list_fields(text: str) -> list[str]:
+    """Keep literal list entries without treating surrounding prose as drug names."""
+    fields = []
+    for sentence in re.split(r"[.!?](?:\s+|$)", text):
+        sentence = re.sub(
+            r"\s+(?:(?:có (?:bị )?)?tương tác với|(?:có )?(?:dùng|uống) (?:chung|cùng) với)\s+",
+            " + ", sentence, flags=re.IGNORECASE,
+        )
+        start = MEDICATION_LIST_START.search(sentence)
+        end = MEDICATION_LIST_END.search(sentence)
+        if start and end and end.start() < start.start():
+            start = None
+        if start:
+            sentence = sentence[start.end():]
+        else:
+            sentence = re.sub(
+                r"^\s*(?:cho (?:tôi |mình )?hỏi|kiểm tra (?:giúp (?:tôi|mình))?)\s*[: ]*",
+                "", sentence, flags=re.IGNORECASE,
+            )
+            if not MEDICATION_LIST_SEPARATOR.search(sentence) and not MEDICATION_LIST_END.search(sentence):
+                continue
+        sentence = MEDICATION_LIST_END.split(sentence, maxsplit=1)[0]
+        for field in MEDICATION_LIST_SEPARATOR.split(sentence):
+            field = field.strip(" \t\r:-•*\"'“”‘’()")
+            field = re.sub(r"^(?:còn )?(?:một )?(?:loại )?thuốc tên\s+", "", field, flags=re.IGNORECASE)
+            if re.fullmatch(r"[\w-]+(?:[ .'-]+[\w-]+){0,5}", field) and not re.search(
+                r"\b(?:kiểm tra|tương tác|có thể|muốn|giúp|thuốc nào|thuốc gì|"
+                r"hai thuốc|thuốc này|cùng nhau|cùng lúc|các thuốc|nhau|"
+                r"buổi (?:sáng|trưa|chiều|tối)|một (?:loại )?thuốc (?:khác|chưa rõ tên)|"
+                r"(?:hai|ba|bốn|năm|\d+) loại thuốc|tôi|mình|đang|hôm qua|hôm nay)\b"
+                r"|^(?:không nhớ|chưa rõ|không rõ) tên\b",
+                field, re.IGNORECASE,
+            ):
+                fields.append(field)
+    return fields
 
 
 def _is_schedule_request(text: str) -> bool:
@@ -109,6 +172,27 @@ def _handoff(text: str, reason: str) -> str:
     return draft["draft"] + "\n" + draft["message"]
 
 
+def _clarify_interaction_list(text, drug_names, lookups, unverified, interaction_text, refer=False):
+    lines = [interaction_text] if interaction_text else []
+    recognized = [name for name, lookup in zip(drug_names, lookups) if lookup.get("status") == "found"]
+    if recognized:
+        lines.append("Thuốc đã nhận diện: " + ", ".join(recognized) + ".")
+    if unverified:
+        entries = ", ".join(f"“{name}”" for name in unverified)
+        lines.append(f"Chưa có dữ liệu kiểm chứng tương ứng cho: {entries}.")
+    lines.extend((
+        "Chưa đủ căn cứ kết luận tương tác cho các cặp có thuốc chưa xác minh hoặc còn thiếu tên.",
+        "Vui lòng đối chiếu tên thuốc hoặc hoạt chất trên nhãn và bổ sung danh sách đầy đủ "
+        "các thuốc đang dùng.",
+        "Cần dược sĩ rà soát toàn bộ danh sách trước khi quyết định." if refer
+        else "Nếu vẫn chưa rõ, hãy nhờ dược sĩ rà soát.",
+    ))
+    result = "\n".join(lines)
+    if interaction_text or recognized or unverified:
+        result = _handoff(text, result)
+    return {"output": result}
+
+
 def _render_drug(record: dict) -> str:
     lines = [
         "Tra cứu trong dữ liệu demo: %s (hoạt chất: %s)." % (
@@ -159,42 +243,61 @@ def answer(text: str) -> dict:
 
     # 2. Find seed-backed names deterministically; no fuzzy medical-name guessing.
     drug_names = _extract_seeded_drugs(text)
-    if not drug_names:
+    interaction_request = _is_interaction_request(text)
+    schedule_request = _is_schedule_request(text)
+    fields = _medication_list_fields(text)
+    missing_names = bool(INCOMPLETE_MEDICATION_LIST.search(text))
+    review_list = interaction_request or (
+        bool(drug_names) and not schedule_request and (len(fields) >= 2 or missing_names)
+    )
+    if not drug_names and (not review_list or _is_out_of_scope_request(text)):
         lookup = tools.lookup_drug(text.strip())
         reason = lookup.get("message", "Không có tên thuốc khớp dữ liệu đã kiểm chứng.")
         return _respond(_handoff(text, reason))
 
     lookups = [tools.lookup_drug(name) for name in drug_names]
+    unverified = {}
+    if review_list:
+        seeded_names = set(drug_names)
+        seeded_names.update(
+            tools._normalize_name(lookup["active_ingredient"])
+            for lookup in lookups if lookup.get("status") == "found"
+        )
+        for field in fields:
+            normalized = tools._normalize_name(field)
+            if normalized.removeprefix("thuốc ") not in seeded_names:
+                unverified.setdefault(normalized, field)
+        for name, lookup in zip(drug_names, lookups):
+            if lookup.get("status") != "found":
+                unverified.setdefault(name, name)
+    needs_clarification = review_list and (
+        unverified or missing_names or (len(drug_names) < 2 and not schedule_request)
+    )
 
     # 3. Interaction check is mandatory for combination questions or lists.
     interaction_result = None
     interaction_text = ""
-    if len(drug_names) >= 2 or _is_interaction_request(text):
-        check_names = list(drug_names)
-        separators = len(re.findall(r",|\bvà\b|\bcùng\b|\bvới\b|\bvoi\b|\+", text.casefold()))
-        if _is_interaction_request(text) and separators + 1 > len(check_names):
-            check_names.append("[thuốc chưa nhận diện]")
-        if len(check_names) < 2:
-            if not _is_schedule_request(text):
-                reason = "Chưa đủ hai tên thuốc đã nhận diện để kiểm tra tương tác. Hãy bổ sung tên/hoạt chất trên nhãn."
-                return _respond(_handoff(text, reason))
-        else:
-            interaction_result = tools.check_interactions(check_names)
-
-            pair_results = interaction_result.get("results", [])
-            interaction_text = _render_interactions(interaction_result)
-            high_risk = [item for item in pair_results
-                         if item.get("risk_tag") == "high_risk_refer_pharmacist"]
-            incomplete = [item for item in pair_results if item.get("status") in {
+    if len(drug_names) >= 2:
+        interaction_result = tools.check_interactions(drug_names)
+        pair_results = interaction_result.get("results", [])
+        interaction_text = _render_interactions(interaction_result)
+        refer = interaction_result.get("status") in {"no_verified_data", "data_unavailable"} or any(
+            item.get("risk_tag") == "high_risk_refer_pharmacist" or item.get("status") in {
                 "no_verified_data", "data_unavailable", "no_verified_interaction_in_seed", "interaction_unclassified"
-            }]
-            if interaction_result.get("status") in {"no_verified_data", "data_unavailable"} and not pair_results:
-                incomplete.append({"message": interaction_result.get("message", "Chưa đủ căn cứ kiểm tra tương tác."), "pair": []})
+            }
+            for item in pair_results
+        )
+        if needs_clarification:
+            details = interaction_text or interaction_result.get("message", "")
+            return _clarify_interaction_list(text, drug_names, lookups, unverified.values(), details, refer=refer)
 
-            if high_risk or incomplete:
-                details = interaction_text or interaction_result.get("message", "Chưa đủ căn cứ kiểm tra tương tác.")
-                reason = details + "\nCần dược sĩ rà soát toàn bộ danh sách trước khi quyết định."
-                return _respond(_handoff(text, reason))
+        if refer:
+            details = interaction_text or interaction_result.get("message", "Chưa đủ căn cứ kiểm tra tương tác.")
+            reason = details + "\nCần dược sĩ rà soát toàn bộ danh sách trước khi quyết định."
+            return _respond(_handoff(text, reason))
+
+    if needs_clarification and not _is_out_of_scope_request(text):
+        return _clarify_interaction_list(text, drug_names, lookups, unverified.values(), "")
 
     if any(item.get("status") != "found" for item in lookups):
         reason = "Không xác minh được đầy đủ các thuốc trong dữ liệu. Không thể kết luận an toàn; cần dược sĩ kiểm tra."
@@ -214,7 +317,7 @@ def answer(text: str) -> dict:
 
     # 5. Schedule entries are copied from explicitly confirmed user input.
     # No dose/time/interval is inferred from the seed or generated here.
-    if _is_schedule_request(text):
+    if schedule_request:
         instructions, issue = _parse_confirmed_instructions(text, drug_names)
         if issue:
             return _respond(_handoff(text, issue))
